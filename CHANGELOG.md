@@ -4,7 +4,6 @@ Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go
 
 ## Unreleased
 
-
 - **A clearer approval**: a post waiting for you reads as one sentence ("Claude Code wants to post to X and LinkedIn"), marked public and can't be unsent, with the agent's reason quoted and the post shown as X and LinkedIn will show it, side by side.
 - Screenshots in the README and on the website.
 
