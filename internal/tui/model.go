@@ -1,7 +1,7 @@
-// Package tui is prasar's screen: write a post once and see it as X and
+// Package tui is vaikhari's screen: write a post once and see it as X and
 // LinkedIn will show it, side by side; post it now, schedule it or keep it
 // as a draft; follow what's waiting, scheduled and posted. The same
-// screen, opened by `prasar approve`, is where you answer an agent's post.
+// screen, opened by `vaikhari approve`, is where you answer an agent's post.
 package tui
 
 import (
@@ -19,11 +19,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/Theyashsawarkar/prasar/internal/app"
-	"github.com/Theyashsawarkar/prasar/internal/linkedin"
-	"github.com/Theyashsawarkar/prasar/internal/post"
-	"github.com/Theyashsawarkar/prasar/internal/ui"
-	"github.com/Theyashsawarkar/prasar/internal/when"
+	"github.com/Theyashsawarkar/vaikhari/internal/app"
+	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/ui"
+	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
 // Options change how the screen opens.
@@ -75,7 +75,7 @@ type Model struct {
 	msgBad bool
 	msgAt  time.Time
 
-	approving bool // opened by `prasar approve`
+	approving bool // opened by `vaikhari approve`
 	quitAfter bool // quit once the X step is done (approve popup)
 }
 
@@ -109,7 +109,7 @@ type authMsg struct{ err error }
 
 // New makes the screen.
 func New(a *app.App, opt Options) *Model {
-	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("prasar")), themeT: ui.ThemeStamp()}
+	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("vaikhari")), themeT: ui.ThemeStamp()}
 	m.ed = textarea.New()
 	m.ed.Placeholder = "What do you want to say? (a line with --- starts the next post of an X thread)"
 	m.ed.ShowLineNumbers = false
@@ -214,7 +214,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.reload()
 		}
 		if s := ui.ThemeStamp(); s != m.themeT {
-			m.themeT, m.st = s, ui.New(ui.LoadTheme("prasar"))
+			m.themeT, m.st = s, ui.New(ui.LoadTheme("vaikhari"))
 			m.styleEditor()
 		}
 		if time.Since(m.liAt) > 30*time.Second {

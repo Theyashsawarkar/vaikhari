@@ -8,17 +8,17 @@ SHARE   = $(DESTDIR)$(PREFIX)/share
 .PHONY: build install uninstall check test lint dist
 
 build:
-	go build -trimpath -o bin/prasar ./cmd/prasar
+	go build -trimpath -o bin/vaikhari ./cmd/vaikhari
 
 install: build
-	install -Dm755 bin/prasar $(BINDIR)/prasar
-	install -Dm644 README.md $(SHARE)/doc/prasar/README.md
-	install -Dm644 CHANGELOG.md $(SHARE)/doc/prasar/CHANGELOG.md
-	install -Dm644 LICENSE $(SHARE)/licenses/prasar/LICENSE
+	install -Dm755 bin/vaikhari $(BINDIR)/vaikhari
+	install -Dm644 README.md $(SHARE)/doc/vaikhari/README.md
+	install -Dm644 CHANGELOG.md $(SHARE)/doc/vaikhari/CHANGELOG.md
+	install -Dm644 LICENSE $(SHARE)/licenses/vaikhari/LICENSE
 
 uninstall:
-	rm -f $(BINDIR)/prasar
-	rm -rf $(SHARE)/doc/prasar $(SHARE)/licenses/prasar
+	rm -f $(BINDIR)/vaikhari
+	rm -rf $(SHARE)/doc/vaikhari $(SHARE)/licenses/vaikhari
 
 test:
 	go test ./...
@@ -26,16 +26,16 @@ test:
 lint:
 	go vet ./...
 	test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }
-	shellcheck -S warning prasar.tmux install.sh scripts/prasar-run
+	shellcheck -S warning vaikhari.tmux install.sh scripts/vaikhari-run
 
 # What CI runs.
 check: lint test build
-	./bin/prasar --version
-	./bin/prasar --help >/dev/null
+	./bin/vaikhari --version
+	./bin/vaikhari --help >/dev/null
 
 # Release binaries (CI does this on a tag).
 dist:
 	mkdir -p dist
 	for arch in amd64 arm64; do \
-	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -ldflags='-s -w' -o dist/prasar-linux-$$arch ./cmd/prasar; \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -ldflags='-s -w' -o dist/vaikhari-linux-$$arch ./cmd/vaikhari; \
 	done

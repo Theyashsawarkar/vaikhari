@@ -2,7 +2,7 @@
 // self-serve API: an app of your own with the "Share on LinkedIn" and
 // "Sign In with LinkedIn using OpenID Connect" products, signed in once in
 // the browser. The token LinkedIn gives such apps lasts 60 days and can't
-// be refreshed: prasar says when it's running out, and `prasar auth
+// be refreshed: vaikhari says when it's running out, and `vaikhari auth
 // linkedin` signs in again.
 package linkedin
 
@@ -27,23 +27,23 @@ import (
 	"time"
 )
 
-// Scopes are what prasar asks for: who you are (to post as you) and
+// Scopes are what vaikhari asks for: who you are (to post as you) and
 // posting.
 const Scopes = "openid profile w_member_social"
 
-// DefaultVersion is the LinkedIn API version prasar speaks (YYYYMM).
+// DefaultVersion is the LinkedIn API version vaikhari speaks (YYYYMM).
 // LinkedIn retires a version after about a year: `linkedin.version` in
-// config.toml picks another without a new prasar.
+// config.toml picks another without a new vaikhari.
 const DefaultVersion = "202607"
 
 // DefaultPort is the local port the browser comes back to after you sign
 // in: the app's redirect URL must be http://localhost:<port>/callback.
 const DefaultPort = 8723
 
-// Bases are where LinkedIn lives; PRASAR_LINKEDIN_URL points both at a
-// fake one (tests, `prasar demo`).
+// Bases are where LinkedIn lives; VAIKHARI_LINKEDIN_URL points both at a
+// fake one (tests, `vaikhari demo`).
 func Bases() (oauth, api string) {
-	if u := strings.TrimRight(os.Getenv("PRASAR_LINKEDIN_URL"), "/"); u != "" {
+	if u := strings.TrimRight(os.Getenv("VAIKHARI_LINKEDIN_URL"), "/"); u != "" {
 		return u, u
 	}
 	return "https://www.linkedin.com", "https://api.linkedin.com"
@@ -80,14 +80,14 @@ func (t Token) Left(now time.Time) time.Duration {
 }
 
 // ErrNotSignedIn means no LinkedIn sign-in yet, or it ran out.
-var ErrNotSignedIn = errors.New("LinkedIn isn't signed in: run `prasar auth linkedin`")
+var ErrNotSignedIn = errors.New("LinkedIn isn't signed in: run `vaikhari auth linkedin`")
 
 // SignIn opens LinkedIn's consent page in the browser and waits for it to
 // come back to the local redirect, then trades the code for a token and
 // reads who you are. say() gets the URL in case no browser opens.
 func SignIn(ctx context.Context, a App, say func(string)) (Token, error) {
 	if a.ClientID == "" || a.ClientSecret == "" {
-		return Token{}, errors.New("no LinkedIn app yet: set linkedin.client_id and client_secret (prasar auth linkedin --setup)")
+		return Token{}, errors.New("no LinkedIn app yet: set linkedin.client_id and client_secret (vaikhari auth linkedin --setup)")
 	}
 	redirect := a.Redirect()
 	u, _ := url.Parse(redirect)
@@ -125,9 +125,9 @@ func SignIn(ctx context.Context, a App, say func(string)) (Token, error) {
 			res.code = q.Get("code")
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		msg := "prasar is signed in to LinkedIn. You can close this tab."
+		msg := "vaikhari is signed in to LinkedIn. You can close this tab."
 		if res.err != nil {
-			msg = "prasar: " + res.err.Error()
+			msg = "vaikhari: " + res.err.Error()
 		}
 		fmt.Fprintf(w, "<p style='font:16px sans-serif;margin:3em'>%s</p>", html.EscapeString(msg))
 		once.Do(func() { got <- res })
@@ -240,7 +240,7 @@ func (c *Client) Post(ctx context.Context, commentary string, images []string) (
 		return "", ErrNotSignedIn
 	}
 	if c.Token.Left(time.Now()) <= 0 {
-		return "", errors.New("the LinkedIn sign-in ran out (they last 60 days): run `prasar auth linkedin`")
+		return "", errors.New("the LinkedIn sign-in ran out (they last 60 days): run `vaikhari auth linkedin`")
 	}
 	body := map[string]any{
 		"author":     c.author(),
@@ -339,7 +339,7 @@ func do(req *http.Request, out any, hdr *http.Header) error {
 		}
 		switch resp.StatusCode {
 		case 401:
-			return fmt.Errorf("LinkedIn refused the sign-in (%s): run `prasar auth linkedin`", msg)
+			return fmt.Errorf("LinkedIn refused the sign-in (%s): run `vaikhari auth linkedin`", msg)
 		case 403:
 			return fmt.Errorf("LinkedIn says the app may not do this (%s): does it have the \"Share on LinkedIn\" product?", msg)
 		case 426:
@@ -365,7 +365,7 @@ type Tokens struct{ Dir string }
 
 func keyring() bool {
 	_, err := exec.LookPath("secret-tool")
-	return err == nil && os.Getenv("PRASAR_NO_KEYRING") == ""
+	return err == nil && os.Getenv("VAIKHARI_NO_KEYRING") == ""
 }
 
 func (ts Tokens) file() string { return filepath.Join(ts.Dir, "linkedin.token") }
@@ -374,7 +374,7 @@ func (ts Tokens) file() string { return filepath.Join(ts.Dir, "linkedin.token") 
 func (ts Tokens) Save(t Token) error {
 	b, _ := json.Marshal(t)
 	if keyring() {
-		cmd := exec.Command("secret-tool", "store", "--label=prasar: LinkedIn", "service", "prasar", "account", "linkedin")
+		cmd := exec.Command("secret-tool", "store", "--label=vaikhari: LinkedIn", "service", "vaikhari", "account", "linkedin")
 		cmd.Stdin = bytes.NewReader(b)
 		if err := cmd.Run(); err == nil {
 			_ = os.Remove(ts.file())
@@ -391,7 +391,7 @@ func (ts Tokens) Save(t Token) error {
 func (ts Tokens) Load() (Token, error) {
 	var b []byte
 	if keyring() {
-		if out, err := exec.Command("secret-tool", "lookup", "service", "prasar", "account", "linkedin").Output(); err == nil && len(out) > 0 {
+		if out, err := lookupSecret("linkedin"); err == nil && len(out) > 0 {
 			b = out
 		}
 	}
@@ -412,7 +412,25 @@ func (ts Tokens) Load() (Token, error) {
 // Delete signs out.
 func (ts Tokens) Delete() {
 	if keyring() {
-		_ = exec.Command("secret-tool", "clear", "service", "prasar", "account", "linkedin").Run()
+		_ = exec.Command("secret-tool", "clear", "service", "vaikhari", "account", "linkedin").Run()
 	}
 	_ = os.Remove(ts.file())
+}
+
+// lookupSecret reads a stored secret. Up to its rename vaikhari was called prasar:
+// a secret still kept under the old name moves to the new one on first read.
+func lookupSecret(account string) ([]byte, error) {
+	if out, err := exec.Command("secret-tool", "lookup", "service", "vaikhari", "account", account).Output(); err == nil && len(out) > 0 {
+		return out, nil
+	}
+	out, err := exec.Command("secret-tool", "lookup", "service", "prasar", "account", account).Output()
+	if err != nil || len(out) == 0 {
+		return nil, errors.New("no secret")
+	}
+	cmd := exec.Command("secret-tool", "store", "--label=vaikhari: LinkedIn", "service", "vaikhari", "account", account)
+	cmd.Stdin = bytes.NewReader(out)
+	if cmd.Run() == nil {
+		_ = exec.Command("secret-tool", "clear", "service", "prasar", "account", account).Run()
+	}
+	return out, nil
 }

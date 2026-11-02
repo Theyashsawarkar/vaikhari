@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Theyashsawarkar/prasar/internal/fake"
+	"github.com/Theyashsawarkar/vaikhari/internal/fake"
 )
 
 func freePort(t *testing.T) int {
@@ -22,7 +22,7 @@ func freePort(t *testing.T) int {
 	return ln.Addr().(*net.TCPAddr).Port
 }
 
-// The browser follows LinkedIn's redirect back to prasar's callback.
+// The browser follows LinkedIn's redirect back to vaikhari's callback.
 func browser(t *testing.T) {
 	Open = func(u string) error {
 		go func() {
@@ -39,7 +39,7 @@ func browser(t *testing.T) {
 func setup(t *testing.T) (*fake.LinkedIn, App) {
 	f := fake.New()
 	t.Cleanup(f.Close)
-	t.Setenv("PRASAR_LINKEDIN_URL", f.URL)
+	t.Setenv("VAIKHARI_LINKEDIN_URL", f.URL)
 	browser(t)
 	return f, App{ClientID: "id", ClientSecret: "secret", Port: freePort(t)}
 }
@@ -92,7 +92,7 @@ func TestErrorsSaySomethingUseful(t *testing.T) {
 	}
 	f.FailPosts = 0
 	bad := &Client{Token: Token{Access: "wrong", Sub: "fake-member", Expires: time.Now().Add(time.Hour).Unix()}}
-	if _, err := bad.Post(ctx, "x", nil); err == nil || !strings.Contains(err.Error(), "prasar auth linkedin") {
+	if _, err := bad.Post(ctx, "x", nil); err == nil || !strings.Contains(err.Error(), "vaikhari auth linkedin") {
 		t.Fatal(err)
 	}
 	expired := &Client{Token: Token{Access: "fake-token", Sub: "fake-member", Expires: time.Now().Add(-time.Hour).Unix()}}
@@ -105,7 +105,7 @@ func TestErrorsSaySomethingUseful(t *testing.T) {
 }
 
 func TestTokensInAFile(t *testing.T) {
-	t.Setenv("PRASAR_NO_KEYRING", "1")
+	t.Setenv("VAIKHARI_NO_KEYRING", "1")
 	ts := Tokens{Dir: t.TempDir()}
 	if _, err := ts.Load(); err != ErrNotSignedIn {
 		t.Fatal(err)

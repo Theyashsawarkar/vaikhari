@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Runs vaikhari for the tmux plugin: the one on PATH, else the copy built in
+# this plugin's folder (bin/vaikhari), building it with Go the first time.
+dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# tmux's environment often lacks ~/.local/bin and ~/go/bin: look there too
+for bin in "$(command -v vaikhari 2>/dev/null)" "$HOME/.local/bin/vaikhari" "${GOBIN:-$HOME/go/bin}/vaikhari"; do
+  if [ -n "$bin" ] && [ -x "$bin" ]; then exec "$bin" "$@"; fi
+done
+# the copy built here: rebuilt whenever the plugin's code is newer (TPM update)
+stale() { [ ! -x "$dir/bin/vaikhari" ] || [ -n "$(find "$dir/cmd" "$dir/internal" "$dir/go.mod" -newer "$dir/bin/vaikhari" -print -quit 2>/dev/null)" ]; }
+if stale; then
+  if command -v go >/dev/null 2>&1; then
+    echo "Building vaikhari..."
+    (cd "$dir" && go build -trimpath -o bin/vaikhari ./cmd/vaikhari) || { echo "Build failed."; read -rn1; exit 1; }
+  else
+    echo "vaikhari isn't installed: see https://github.com/Theyashsawarkar/vaikhari#install"
+    echo "(press a key)"; read -rn1; exit 1
+  fi
+fi
+exec "$dir/bin/vaikhari" "$@"

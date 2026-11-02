@@ -1,5 +1,5 @@
 /bin/
-/prasar
+/vaikhari
 /dist/
 # never commit credentials or mail: OAuth clients, tokens, local copies
 client.json

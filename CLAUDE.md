@@ -1,19 +1,19 @@
-# prasar -- notes for agents
+# vaikhari -- notes for agents
 
-Write once, post to X and LinkedIn: one Go binary (`cmd/prasar`) with a
+Write once, post to X and LinkedIn: one Go binary (`cmd/vaikhari`) with a
 Bubble Tea screen, a CLI, an MCP server and a background service for the
-schedule, all over one SQLite file. Usable as the `prasar` command
-(install.sh, make install, kosha) and as a TPM plugin (`prasar.tmux` binds
+schedule, all over one SQLite file. Usable as the `vaikhari` command
+(install.sh, make install, kosha) and as a TPM plugin (`vaikhari.tmux` binds
 a popup key). It is pulled into Vayu (github.com/Theyashsawarkar/vayu) as a
 tmux plugin, but must work on any Linux setup without Vayu: no hardcoded
-paths, Vayu-specific behaviour only through the `@prasar-*` options and
+paths, Vayu-specific behaviour only through the `@vaikhari-*` options and
 config.toml.
 
 - Layout: `internal/post` each network's rules (X's weighted count and
   threads, LinkedIn's little-text escaping); `internal/app` the core every
   front end shares (config, the posts' lifecycle, publishing, the
   schedule); `internal/store` SQLite; `internal/linkedin` sign-in and the
-  API; `internal/fake` a fake LinkedIn for tests and `prasar demo`;
+  API; `internal/fake` a fake LinkedIn for tests and `vaikhari demo`;
   `internal/tui` the screen; `internal/mcpserver` the agent tools;
   `internal/ui` the drawing kit shared in look with sandesh, pattan and
   nauka; `internal/when` the time parser (sandesh's).
@@ -32,10 +32,10 @@ config.toml.
   any of them updates it. Every change gets a CHANGELOG.md entry; releases
   are tags (`vX.Y.Z`) with `Version` in internal/app/app.go bumped to match.
 - `make check` must pass (vet, gofmt, ShellCheck, tests).
-- Test against the fake LinkedIn (`prasar demo`, `PRASAR_HOME`,
-  `PRASAR_LINKEDIN_URL`), never the user's real accounts, and never open
+- Test against the fake LinkedIn (`vaikhari demo`, `VAIKHARI_HOME`,
+  `VAIKHARI_LINKEDIN_URL`), never the user's real accounts, and never open
   X's share page from a test. Drive the screen in a throwaway tmux server:
-  `tmux -L t -f /dev/null new -d -s o -x 150 -y 40 "env -u TMUX bin/prasar demo"`,
+  `tmux -L t -f /dev/null new -d -s o -x 150 -y 40 "env -u TMUX bin/vaikhari demo"`,
   then `tmux -L t send-keys -t o ...` / `capture-pane -p -t o`, and
   `tmux -L t kill-server` after. Send Esc on its own (Esc then a key at once
   reads as Alt+key).

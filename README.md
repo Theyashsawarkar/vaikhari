@@ -1,4 +1,4 @@
-# prasar
+# vaikhari
 
 **Write once, post to X and LinkedIn from the terminal.** One editor with a
 live preview of how each network will show your post, drafts, a schedule,
@@ -7,14 +7,14 @@ and an AI agent that can draft posts for you (you approve every one).
 one click.
 
 <p align="center">
-  <img alt="prasar's Compose tab: the post on the left, live previews of how X and LinkedIn will show it on the right, with the character counts" src="assets/screenshots/compose.png" width="100%">
+  <img alt="vaikhari's Compose tab: the post on the left, live previews of how X and LinkedIn will show it on the right, with the character counts" src="assets/screenshots/compose.png" width="100%">
 </p>
 <p align="center">
   <img alt="The Queue: an agent's post waiting for your approval, with its reason, and a post scheduled for tomorrow" src="assets/screenshots/queue.png" width="49%">
 </p>
-<p align="center"><sub>Screenshots use <code>prasar demo</code>: a made-up account.</sub></p>
+<p align="center"><sub>Screenshots use <code>vaikhari demo</code>: a made-up account.</sub></p>
 
-> *Prasar* (प्रसार) is Sanskrit for "spreading out, broadcast".
+> *Vaikhari* (वैखरी) is Sanskrit for "spreading out, broadcast".
 
 ## Contents
 
@@ -45,13 +45,13 @@ one click.
   the same text is one post there.
 - **LinkedIn posts by itself** through its free API, images included, and
   `#words` become real hashtags.
-- **X with one click**: prasar opens X's share page with the post filled in,
+- **X with one click**: vaikhari opens X's share page with the post filled in,
   you press Post. Images go to your clipboard to paste. Why: X's API costs
   money per post since 2026 ([ADR 2](docs/adr/0002-x-through-its-share-page.md)).
 - **Drafts, a schedule, history**: tabs for Compose, Queue (waiting and
   scheduled), Drafts and Posted, with each post's links.
 - **Never lose a post**: closing the screen keeps what you wrote as a draft.
-- **Agents draft, you decide**: `prasar mcp` lets Claude Code (or any MCP
+- **Agents draft, you decide**: `vaikhari mcp` lets Claude Code (or any MCP
   agent) check, draft and propose posts; every one waits for your approval
   in a popup, where you can edit it ([ADR 3](docs/adr/0003-agents-always-ask.md)).
 - **Looks like the rest of your terminal**: rounded boxes and key caps like
@@ -63,14 +63,14 @@ one click.
 With [kosha](https://github.com/Theyashsawarkar/kosha):
 
 ```sh
-kosha install prasar
+kosha install vaikhari
 ```
 
 Or with the installer, which downloads the release binary into
-`~/.local/share/prasar` (or builds it with Go) and links `~/.local/bin/prasar`:
+`~/.local/share/vaikhari` (or builds it with Go) and links `~/.local/bin/vaikhari`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Theyashsawarkar/prasar/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Theyashsawarkar/vaikhari/main/install.sh | bash
 ```
 
 From source: `make && make install` (Go 1.26+).
@@ -79,26 +79,26 @@ From source: `make && make install` (Go 1.26+).
 opens it in a popup:
 
 ```tmux
-set -g @plugin 'Theyashsawarkar/prasar'
+set -g @plugin 'Theyashsawarkar/vaikhari'
 ```
 
-The plugin runs the `prasar` on your PATH, or builds its own copy with Go the
+The plugin runs the `vaikhari` on your PATH, or builds its own copy with Go the
 first time.
 
 Optional: `wl-clipboard` (Wayland) or `xclip` (X11) for images on X and
 copying links, `notify-send` (libnotify) for notifications, `secret-tool`
 (libsecret) to keep the LinkedIn sign-in in your keyring.
 
-Try it first without any account: `prasar demo` runs it with a fake
+Try it first without any account: `vaikhari demo` runs it with a fake
 LinkedIn in a throwaway folder (nothing is posted, X isn't opened).
 
 ## Set up LinkedIn
 
-prasar posts to LinkedIn through an app of your own: free, self-serve, about
+vaikhari posts to LinkedIn through an app of your own: free, self-serve, about
 two minutes, once ([ADR 4](docs/adr/0004-linkedin-through-your-own-app.md)).
 
 ```sh
-prasar auth linkedin --setup
+vaikhari auth linkedin --setup
 ```
 
 It walks you through it:
@@ -110,25 +110,25 @@ It walks you through it:
    LinkedIn using OpenID Connect** (both approved at once).
 3. On the **Auth** tab add `http://localhost:8723/callback` to "Authorized
    redirect URLs", and copy the Client ID and Primary Client Secret into
-   prasar.
+   vaikhari.
 
 Then your browser opens on LinkedIn's sign-in. LinkedIn's sign-in lasts
 **60 days** and can't be renewed silently: the screen's top right shows the
-days left, turning yellow in the last week, and `L` (or `prasar auth
+days left, turning yellow in the last week, and `L` (or `vaikhari auth
 linkedin`) signs in again.
 
-prasar posts to your personal profile. Company pages need LinkedIn's
+vaikhari posts to your personal profile. Company pages need LinkedIn's
 review and aren't supported.
 
 ## Posting to X: one click
 
-X has no free API any more, so prasar never logs in to X. When a post goes
+X has no free API any more, so vaikhari never logs in to X. When a post goes
 out:
 
 1. X's share page opens in your browser with the post filled in (the first
    image, if any, is on your clipboard: `Ctrl+V` pastes it).
 2. You press **Post** there.
-3. Back in prasar, press `Enter`. Paste the post's link first if you want
+3. Back in vaikhari, press `Enter`. Paste the post's link first if you want
    it kept; for a thread, the link makes the next part a reply to it.
 
 `Esc` leaves it for later (it waits in Queue, `o` opens it again);
@@ -137,7 +137,7 @@ you: at its time a notification offers to open it.
 
 ## The screen
 
-`prasar` (or `prefix B` in tmux) opens on **Compose**, in the editor:
+`vaikhari` (or `prefix B` in tmux) opens on **Compose**, in the editor:
 
 - **Compose**: the editor, the "Post" box (where it goes: `Ctrl+X` /
   `Ctrl+L`; when; images), and the X and LinkedIn previews. Under 100
@@ -214,33 +214,33 @@ click. Tabs count what's in Queue and Drafts.
 ## From the shell
 
 ```sh
-prasar post "Shipped it #golang"                 # both networks (or config's `networks`)
-prasar post --linkedin "Only on LinkedIn"
-prasar post --x --image shot.png "With a picture"
-prasar post --at "fri 6pm" "Later"               # scheduled
-prasar post --draft "Not yet"
-echo "From a file" | prasar post -               # text on stdin
-prasar check "Will this fit?"                    # X count and thread, LinkedIn count and fold
-prasar list [draft|scheduled|approval|ready|posted|failed]
-prasar approve [ID]                              # an agent's post (the oldest waiting)
+vaikhari post "Shipped it #golang"                 # both networks (or config's `networks`)
+vaikhari post --linkedin "Only on LinkedIn"
+vaikhari post --x --image shot.png "With a picture"
+vaikhari post --at "fri 6pm" "Later"               # scheduled
+vaikhari post --draft "Not yet"
+echo "From a file" | vaikhari post -               # text on stdin
+vaikhari check "Will this fit?"                    # X count and thread, LinkedIn count and fold
+vaikhari list [draft|scheduled|approval|ready|posted|failed]
+vaikhari approve [ID]                              # an agent's post (the oldest waiting)
 ```
 
 | Command | What it does |
 |---|---|
-| `prasar` | The screen (`--popup KEY`: in a tmux popup, `KEY` closes it) |
-| `prasar post TEXT` | Post (`--x`, `--linkedin`, `--at WHEN`, `--image PATH` repeated, `--draft`); for X it opens the page and asks you to confirm |
-| `prasar check TEXT` | How the text fits each network |
-| `prasar list [STATUS]` | Your posts, one per line |
-| `prasar approve [ID]` | Answer an agent's post |
-| `prasar auth linkedin [--setup]` | Sign in to LinkedIn (`--setup`: enter the app's id and secret) |
-| `prasar auth status` / `logout` | What's signed in / sign out of LinkedIn |
-| `prasar service install\|remove\|status` | The background service that publishes scheduled posts |
-| `prasar daemon` | The same, in the foreground |
-| `prasar mcp [--requester NAME]` | The MCP server for agents (stdio) |
-| `prasar doctor` | Check the setup: LinkedIn, clipboard, notifications, the service |
-| `prasar demo` | Try it with a fake LinkedIn |
-| `prasar keybindings` | The keys, for Vayu's keybinding search |
-| `prasar --version` | The version |
+| `vaikhari` | The screen (`--popup KEY`: in a tmux popup, `KEY` closes it) |
+| `vaikhari post TEXT` | Post (`--x`, `--linkedin`, `--at WHEN`, `--image PATH` repeated, `--draft`); for X it opens the page and asks you to confirm |
+| `vaikhari check TEXT` | How the text fits each network |
+| `vaikhari list [STATUS]` | Your posts, one per line |
+| `vaikhari approve [ID]` | Answer an agent's post |
+| `vaikhari auth linkedin [--setup]` | Sign in to LinkedIn (`--setup`: enter the app's id and secret) |
+| `vaikhari auth status` / `logout` | What's signed in / sign out of LinkedIn |
+| `vaikhari service install\|remove\|status` | The background service that publishes scheduled posts |
+| `vaikhari daemon` | The same, in the foreground |
+| `vaikhari mcp [--requester NAME]` | The MCP server for agents (stdio) |
+| `vaikhari doctor` | Check the setup: LinkedIn, clipboard, notifications, the service |
+| `vaikhari demo` | Try it with a fake LinkedIn |
+| `vaikhari keybindings` | The keys, for Vayu's keybinding search |
+| `vaikhari --version` | The version |
 
 Times (`--at`, `Ctrl+T`, `t`) read the way people write them: `in 2h`,
 `tomorrow 9am`, `fri 6pm`, `next tue 10:00`, `tonight`, `3 nov 10:30`,
@@ -248,12 +248,12 @@ Times (`--at`, `Ctrl+T`, `t`) read the way people write them: `in 2h`,
 
 ## The schedule
 
-Scheduled posts go out while prasar runs (the screen, `prasar mcp`), or at
+Scheduled posts go out while vaikhari runs (the screen, `vaikhari mcp`), or at
 any time with the background service:
 
 ```sh
-prasar service install      # ~/.config/systemd/user/prasar.service, started now and at login
-journalctl --user -u prasar -f
+vaikhari service install      # ~/.config/systemd/user/vaikhari.service, started now and at login
+journalctl --user -u vaikhari -f
 ```
 
 At a post's time, LinkedIn goes out by itself and you get a notification;
@@ -264,23 +264,23 @@ never publish one twice.
 ## For AI agents (MCP)
 
 ```sh
-claude mcp add --scope user prasar -- prasar mcp --requester "Claude Code"
+claude mcp add --scope user vaikhari -- vaikhari mcp --requester "Claude Code"
 ```
 
 | Tool | What it does |
 |---|---|
 | `post_check` | Lengths, X's thread split, LinkedIn's fold: to fit a post before proposing it |
-| `post_draft` | Save a draft you finish in prasar |
+| `post_draft` | Save a draft you finish in vaikhari |
 | `post_publish` | Propose a post, now or `send_at` later: **you approve it first** (a tmux popup on the agent's pane, and a notification), and may edit or decline it; the call waits up to 10 minutes and reports what happened |
 | `post_list` | Your posts and their links |
 | `post_accounts` | LinkedIn's sign-in and days left; X's one click |
 
 Agents never post on their own, and are told X needs your click. What they
-did is logged in `~/.local/state/prasar/agent.log`.
+did is logged in `~/.local/state/vaikhari/agent.log`.
 
 ## Configuration
 
-`~/.config/prasar/config.toml` (written by `prasar auth linkedin --setup`,
+`~/.config/vaikhari/config.toml` (written by `vaikhari auth linkedin --setup`,
 private to you):
 
 ```toml
@@ -299,30 +299,30 @@ handle = "you"                 # shown as @you in the X preview
 
 | Environment | What it does |
 |---|---|
-| `PRASAR_HOME` | Keep config, posts and state under one folder |
-| `PRASAR_OPENER` | The program that opens links (default `xdg-open`) |
-| `PRASAR_NO_KEYRING` | Keep the LinkedIn sign-in in a file, not the keyring |
-| `PRASAR_LINKEDIN_URL` | Talk to another LinkedIn (the tests' fake) |
+| `VAIKHARI_HOME` | Keep config, posts and state under one folder |
+| `VAIKHARI_OPENER` | The program that opens links (default `xdg-open`) |
+| `VAIKHARI_NO_KEYRING` | Keep the LinkedIn sign-in in a file, not the keyring |
+| `VAIKHARI_LINKEDIN_URL` | Talk to another LinkedIn (the tests' fake) |
 | `NO_NERD_FONT` | Square key caps instead of Nerd Font round ones |
 
 tmux plugin options (set before TPM's `run` line):
 
 | Option | Default | What it does |
 |---|---|---|
-| `@prasar-key` | `B` | Key after the prefix (`none`: no key) |
-| `@prasar-width` / `@prasar-height` | `90%` / `88%` | Popup size |
-| `@prasar-title` | ` prasar ` | Popup title |
-| `@prasar-launcher` | | Your own popup command instead of `display-popup` |
+| `@vaikhari-key` | `B` | Key after the prefix (`none`: no key) |
+| `@vaikhari-width` / `@vaikhari-height` | `90%` / `88%` | Popup size |
+| `@vaikhari-title` | ` vaikhari ` | Popup title |
+| `@vaikhari-launcher` | | Your own popup command instead of `display-popup` |
 
 ## Files
 
 | Path | What |
 |---|---|
-| `~/.config/prasar/config.toml` | Settings and your LinkedIn app (0600) |
-| `~/.local/share/prasar/prasar.db` | Your posts (SQLite, 0600) |
-| keyring, or `~/.local/share/prasar/linkedin.token` | The LinkedIn sign-in |
-| `~/.local/state/prasar/agent.log` | What agents asked for, and your answers |
-| `~/.config/systemd/user/prasar.service` | The background service (`service install`) |
+| `~/.config/vaikhari/config.toml` | Settings and your LinkedIn app (0600) |
+| `~/.local/share/vaikhari/vaikhari.db` | Your posts (SQLite, 0600) |
+| keyring, or `~/.local/share/vaikhari/linkedin.token` | The LinkedIn sign-in |
+| `~/.local/state/vaikhari/agent.log` | What agents asked for, and your answers |
+| `~/.config/systemd/user/vaikhari.service` | The background service (`service install`) |
 
 ## How it works
 
@@ -333,13 +333,13 @@ posts in SQLite and moves them between `draft`, `approval`, `scheduled`,
 `declined` only through checked transitions. `internal/post` knows each
 network's rules (X's weighted count and thread splitting, LinkedIn's
 "little text" escaping and hashtags), `internal/linkedin` the API, and
-`internal/fake` a fake LinkedIn for the tests and `prasar demo`. Decisions
+`internal/fake` a fake LinkedIn for the tests and `vaikhari demo`. Decisions
 are recorded in [docs/adr](docs/adr/).
 
 ## Troubleshooting
 
 - **LinkedIn: "refused the sign-in"** — the 60 days ran out or the app
-  changed: `prasar auth linkedin`.
+  changed: `vaikhari auth linkedin`.
 - **LinkedIn: "the app may not do this"** — add the **Share on LinkedIn**
   product to the app.
 - **LinkedIn: "retired this API version"** — set `linkedin.version` in
@@ -347,9 +347,9 @@ are recorded in [docs/adr](docs/adr/).
 - **"can't listen on port 8723"** — something else uses it: set
   `linkedin.port` and the app's redirect URL to another port.
 - **X: the image isn't there** — X's share page can't take images: paste
-  it (`Ctrl+V`); prasar copied it when the page opened (needs wl-copy or xclip).
+  it (`Ctrl+V`); vaikhari copied it when the page opened (needs wl-copy or xclip).
 - **A scheduled post didn't go out** — nothing was running at its time:
-  `prasar service install`. `prasar doctor` checks it all.
+  `vaikhari service install`. `vaikhari doctor` checks it all.
 
 ## License
 

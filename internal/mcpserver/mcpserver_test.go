@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Theyashsawarkar/prasar/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
 )
 
 func TestDescribe(t *testing.T) {

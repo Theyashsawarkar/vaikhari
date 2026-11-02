@@ -1,9 +1,9 @@
-// Package app is prasar's core, shared by the screen, the CLI, the MCP
+// Package app is vaikhari's core, shared by the screen, the CLI, the MCP
 // server and the background service: config, the posts' lifecycle
 // (drafts, approval, the schedule) and publishing.
 //
 // LinkedIn posts through its free API. X has no free API any more, so X
-// posts go through X's own share page: prasar opens it with the post
+// posts go through X's own share page: vaikhari opens it with the post
 // filled in and you press Post (images are put on the clipboard to
 // paste). Nothing here can post to X without you.
 package app
@@ -20,21 +20,21 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/Theyashsawarkar/prasar/internal/linkedin"
-	"github.com/Theyashsawarkar/prasar/internal/post"
-	"github.com/Theyashsawarkar/prasar/internal/store"
+	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/store"
 )
 
-// Version is prasar's version.
-const Version = "0.1.1"
+// Version is vaikhari's version.
+const Version = "0.2.0"
 
-// Paths are where prasar keeps things. PRASAR_HOME puts them all under
+// Paths are where vaikhari keeps things. VAIKHARI_HOME puts them all under
 // one folder (the demo, tests).
 type Paths struct{ Config, Data, State string }
 
 // DefaultPaths follows the XDG base directories.
 func DefaultPaths() Paths {
-	if h := os.Getenv("PRASAR_HOME"); h != "" {
+	if h := os.Getenv("VAIKHARI_HOME"); h != "" {
 		return Paths{filepath.Join(h, "config"), filepath.Join(h, "data"), filepath.Join(h, "state")}
 	}
 	home, _ := os.UserHomeDir()
@@ -44,9 +44,9 @@ func DefaultPaths() Paths {
 		}
 		return filepath.Join(home, def)
 	}
-	return Paths{filepath.Join(env("XDG_CONFIG_HOME", ".config"), "prasar"),
-		filepath.Join(env("XDG_DATA_HOME", ".local/share"), "prasar"),
-		filepath.Join(env("XDG_STATE_HOME", ".local/state"), "prasar")}
+	return Paths{filepath.Join(env("XDG_CONFIG_HOME", ".config"), "vaikhari"),
+		filepath.Join(env("XDG_DATA_HOME", ".local/share"), "vaikhari"),
+		filepath.Join(env("XDG_STATE_HOME", ".local/state"), "vaikhari")}
 }
 
 // ConfigFile is config.toml.
@@ -94,11 +94,11 @@ func SaveConfig(p Paths, c Config) error {
 		return err
 	}
 	defer f.Close()
-	fmt.Fprintln(f, "# prasar's settings: https://github.com/Theyashsawarkar/prasar#configuration")
+	fmt.Fprintln(f, "# vaikhari's settings: https://github.com/Theyashsawarkar/vaikhari#configuration")
 	return toml.NewEncoder(f).Encode(c)
 }
 
-// App is an open prasar.
+// App is an open vaikhari.
 type App struct {
 	Paths  Paths
 	Config Config
@@ -114,13 +114,13 @@ type App struct {
 	Notifier func(title, body, action string) bool
 }
 
-// Open opens prasar's config and posts.
+// Open opens vaikhari's config and posts.
 func Open(p Paths) (*App, error) {
 	c, err := LoadConfig(p)
 	if err != nil {
 		return nil, err
 	}
-	s, err := store.Open(filepath.Join(p.Data, "prasar.db"))
+	s, err := store.Open(filepath.Join(p.Data, "vaikhari.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (a *App) LinkedIn() (linkedin.Token, error) {
 		return t, err
 	}
 	if t.Left(a.Now()) <= 0 {
-		return t, errors.New("the LinkedIn sign-in ran out (they last 60 days): run `prasar auth linkedin`")
+		return t, errors.New("the LinkedIn sign-in ran out (they last 60 days): run `vaikhari auth linkedin`")
 	}
 	return t, nil
 }
@@ -536,9 +536,9 @@ func (a *App) DeliverDue(ctx context.Context) []post.Post {
 		}
 		done, err := a.Publish(ctx, claim, false)
 		if err != nil {
-			a.Notifier("prasar: a scheduled post failed", oneLine(done.Text, 60)+"\n"+err.Error(), "")
+			a.Notifier("vaikhari: a scheduled post failed", oneLine(done.Text, 60)+"\n"+err.Error(), "")
 		} else if done.Status == post.Posted {
-			a.Notifier("prasar: posted", oneLine(done.Text, 80), "")
+			a.Notifier("vaikhari: posted", oneLine(done.Text, 80), "")
 		}
 		out = append(out, done)
 	}
@@ -548,7 +548,7 @@ func (a *App) DeliverDue(ctx context.Context) []post.Post {
 // notifyX says an X post is due, and opens it on a click.
 func (a *App) notifyX(p post.Post) {
 	go func() {
-		if a.Notifier("prasar: your X post is ready", oneLine(p.Text, 90)+"\nOpen it and press Post.", "Open in browser") {
+		if a.Notifier("vaikhari: your X post is ready", oneLine(p.Text, 90)+"\nOpen it and press Post.", "Open in browser") {
 			_, _ = a.OpenX(p.ID)
 		}
 	}()
@@ -557,12 +557,12 @@ func (a *App) notifyX(p post.Post) {
 // AskApproval puts an agent's post in front of you: a tmux popup when
 // there's a tmux to show it on, and a notification either way.
 func (a *App) AskApproval(p post.Post) {
-	a.Notifier("prasar: approve a post?", (firstNonEmpty(p.Requester, "An agent"))+" wants to post: "+oneLine(p.Text, 80)+
-		"\nOpen prasar (or run prasar approve) to answer.", "")
+	a.Notifier("vaikhari: approve a post?", (firstNonEmpty(p.Requester, "An agent"))+" wants to post: "+oneLine(p.Text, 80)+
+		"\nOpen vaikhari (or run vaikhari approve) to answer.", "")
 	if os.Getenv("TMUX") == "" {
 		return
 	}
-	args := []string{"display-popup", "-E", "-w", "86%", "-h", "84%", "-T", " prasar: approve post ",
+	args := []string{"display-popup", "-E", "-w", "86%", "-h", "84%", "-T", " vaikhari: approve post ",
 		fmt.Sprintf("%s approve %d", shellQuote(Executable()), p.ID)}
 	if pane := os.Getenv("TMUX_PANE"); pane != "" {
 		args = append(args[:1], append([]string{"-t", pane}, args[1:]...)...)
@@ -598,16 +598,16 @@ func (a *App) WaitFor(ctx context.Context, id int64, statuses ...string) (post.P
 
 // ---------------------------------------------------------------- the desktop
 
-// Executable is this prasar binary.
+// Executable is this vaikhari binary.
 func Executable() string {
 	if p, err := os.Executable(); err == nil {
 		return p
 	}
-	return "prasar"
+	return "vaikhari"
 }
 
 func openURL(u string) error {
-	if o := os.Getenv("PRASAR_OPENER"); o != "" {
+	if o := os.Getenv("VAIKHARI_OPENER"); o != "" {
 		return exec.Command(o, u).Start()
 	}
 	return exec.Command("xdg-open", u).Start()
@@ -643,7 +643,7 @@ func notify(title, body, action string) bool {
 	if !have("notify-send") {
 		return false
 	}
-	args := []string{"-a", "prasar", "-i", "mail-send", title, body}
+	args := []string{"-a", "vaikhari", "-i", "mail-send", title, body}
 	if action == "" {
 		_ = exec.Command("notify-send", args...).Start()
 		return false

@@ -10,19 +10,19 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/Theyashsawarkar/prasar/internal/app"
-	"github.com/Theyashsawarkar/prasar/internal/fake"
-	"github.com/Theyashsawarkar/prasar/internal/linkedin"
-	"github.com/Theyashsawarkar/prasar/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/app"
+	"github.com/Theyashsawarkar/vaikhari/internal/fake"
+	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
 )
 
 func newApp(t *testing.T) (*app.App, *fake.LinkedIn, *[]string) {
-	t.Setenv("PRASAR_NO_KEYRING", "1")
+	t.Setenv("VAIKHARI_NO_KEYRING", "1")
 	t.Setenv("NO_NERD_FONT", "1")
 	t.Setenv("TMUX", "")
 	f := fake.New()
 	t.Cleanup(f.Close)
-	t.Setenv("PRASAR_LINKEDIN_URL", f.URL)
+	t.Setenv("VAIKHARI_LINKEDIN_URL", f.URL)
 	h := t.TempDir()
 	a, err := app.Open(app.Paths{Config: filepath.Join(h, "c"), Data: filepath.Join(h, "d"), State: filepath.Join(h, "s")})
 	if err != nil {

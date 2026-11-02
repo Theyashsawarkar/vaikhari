@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Theyashsawarkar/prasar/internal/fake"
-	"github.com/Theyashsawarkar/prasar/internal/linkedin"
-	"github.com/Theyashsawarkar/prasar/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/fake"
+	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
 )
 
 type desk struct {
@@ -43,10 +43,10 @@ func (d *desk) note(t, b, action string) bool {
 func (d *desk) last() string { d.mu.Lock(); defer d.mu.Unlock(); return d.opened[len(d.opened)-1] }
 
 func newApp(t *testing.T, signedIn bool) (*App, *fake.LinkedIn, *desk) {
-	t.Setenv("PRASAR_NO_KEYRING", "1")
+	t.Setenv("VAIKHARI_NO_KEYRING", "1")
 	f := fake.New()
 	t.Cleanup(f.Close)
-	t.Setenv("PRASAR_LINKEDIN_URL", f.URL)
+	t.Setenv("VAIKHARI_LINKEDIN_URL", f.URL)
 	t.Setenv("TMUX", "")
 	h := t.TempDir()
 	p := Paths{filepath.Join(h, "c"), filepath.Join(h, "d"), filepath.Join(h, "s")}
@@ -68,7 +68,7 @@ func TestPostNowToBoth(t *testing.T) {
 	img := filepath.Join(t.TempDir(), "shot.png")
 	os.WriteFile(img, []byte("png"), 0o644)
 	p := a.New()
-	p.Text = "Shipped prasar today #golang"
+	p.Text = "Shipped vaikhari today #golang"
 	p.Images = []string{img}
 	got, err := a.Submit(context.Background(), p, true)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestPostNowToBoth(t *testing.T) {
 	}
 	// LinkedIn went through the API, escaped, with the hashtag
 	posts := f.Posts()
-	if len(posts) != 1 || posts[0].Commentary != `Shipped prasar today {hashtag|\#|golang}` || len(posts[0].Images) != 1 {
+	if len(posts) != 1 || posts[0].Commentary != `Shipped vaikhari today {hashtag|\#|golang}` || len(posts[0].Images) != 1 {
 		t.Fatal(posts)
 	}
 	if got.State(post.LinkedIn) != post.Done || !strings.Contains(got.Results[post.LinkedIn].URL, posts[0].URN) {
@@ -86,7 +86,7 @@ func TestPostNowToBoth(t *testing.T) {
 	if got.State(post.X) != post.Opened || got.Status != post.Ready {
 		t.Fatal(got.Status, got.Results)
 	}
-	if !strings.HasPrefix(d.last(), "https://x.com/intent/post?text=Shipped+prasar+today+%23golang") || d.copied[0] != img {
+	if !strings.HasPrefix(d.last(), "https://x.com/intent/post?text=Shipped+vaikhari+today+%23golang") || d.copied[0] != img {
 		t.Fatal(d.opened, d.copied)
 	}
 	done, more, err := a.PostedX(got.ID, "https://x.com/asha/status/111")
@@ -205,7 +205,7 @@ func TestLinkedInFailures(t *testing.T) {
 	p.Text = "hello"
 	p.Networks = []string{post.LinkedIn}
 	got, err := a.Submit(context.Background(), p, false)
-	if err == nil || got.Status != post.Failed || !strings.Contains(got.Results[post.LinkedIn].Error, "prasar auth linkedin") {
+	if err == nil || got.Status != post.Failed || !strings.Contains(got.Results[post.LinkedIn].Error, "vaikhari auth linkedin") {
 		t.Fatal(got, err)
 	}
 	a.Tokens.Save(linkedin.Token{Access: "fake-token", Sub: "fake-member", Expires: time.Now().Add(time.Hour).Unix()})

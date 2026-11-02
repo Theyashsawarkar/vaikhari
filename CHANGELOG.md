@@ -2,8 +2,14 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
-## Unreleased
+## v0.2.0 -- 2026-11-02
 
+- **Renamed from prasar to vaikhari** (वैखरी, speech spoken aloud: the last of
+  the four stages of speech, the one the world hears). The command is
+  `vaikhari`, the repository github.com/Theyashsawarkar/vaikhari (the old
+  address redirects), the MCP server `vaikhari`. The first run moves your
+  folders, database and LinkedIn sign-in to the new name; `kosha update` moves
+  the install.
 - **A clearer approval**: a post waiting for you reads as one sentence ("Claude Code wants to post to X and LinkedIn"), marked public and can't be unsent, with the agent's reason quoted and the post shown as X and LinkedIn will show it, side by side.
 - Screenshots in the README and on the website.
 

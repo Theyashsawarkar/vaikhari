@@ -12,16 +12,16 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/Theyashsawarkar/prasar/internal/app"
-	"github.com/Theyashsawarkar/prasar/internal/post"
-	"github.com/Theyashsawarkar/prasar/internal/when"
+	"github.com/Theyashsawarkar/vaikhari/internal/app"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
-const instructions = `prasar posts to the user's X and LinkedIn.
+const instructions = `vaikhari posts to the user's X and LinkedIn.
 
 - Write posts in the user's voice, then check them with post_check (X counts 280 weighted characters; a longer text becomes a thread, or split it yourself with a line holding only "---"; LinkedIn takes 3000 and folds after about 210 with "…see more").
-- post_draft saves a draft the user can finish in prasar. post_publish asks to publish (now, or later with send_at): the user always approves it in a popup first and may edit it. Never claim something was posted unless the result says so.
-- LinkedIn posts go out through its API. X has no free API: after approval prasar opens X's share page with the post filled in and the user presses Post themselves, so an X post is "waiting for the user's click" until they confirm it.
+- post_draft saves a draft the user can finish in vaikhari. post_publish asks to publish (now, or later with send_at): the user always approves it in a popup first and may edit it. Never claim something was posted unless the result says so.
+- LinkedIn posts go out through its API. X has no free API: after approval vaikhari opens X's share page with the post filled in and the user presses Post themselves, so an X post is "waiting for the user's click" until they confirm it.
 - Images are local paths (PNG, JPEG, GIF, WebP), only ones the user asked for.`
 
 type server struct{ a *app.App }
@@ -47,20 +47,20 @@ func Run(ctx context.Context, a *app.App, requester string) error {
 // New builds the server.
 func New(a *app.App, requester string) *mcp.Server {
 	s := &server{a: a}
-	srv := mcp.NewServer(&mcp.Implementation{Name: "prasar", Version: app.Version}, &mcp.ServerOptions{Instructions: instructions})
+	srv := mcp.NewServer(&mcp.Implementation{Name: "vaikhari", Version: app.Version}, &mcp.ServerOptions{Instructions: instructions})
 	ro := &mcp.ToolAnnotations{ReadOnlyHint: true}
 	mcp.AddTool(srv, &mcp.Tool{Name: "post_check", Annotations: ro,
 		Description: "Check a post against X's and LinkedIn's rules before drafting or publishing: its lengths, how X would split it into a thread, and what LinkedIn shows before \"…see more\"."}, s.check)
 	mcp.AddTool(srv, &mcp.Tool{Name: "post_draft",
-		Description: "Save a post as a draft in prasar, without publishing. The user finishes and posts it from prasar. Returns its id."}, s.draft)
+		Description: "Save a post as a draft in vaikhari, without publishing. The user finishes and posts it from vaikhari. Returns its id."}, s.draft)
 	mcp.AddTool(srv, &mcp.Tool{Name: "post_publish",
 		Description: "Ask to publish a post on X and/or LinkedIn, now or later (send_at: \"tomorrow 9am\", \"fri 6pm\", \"in 2h\"). The user always approves it in a popup first and may edit it; the call waits for the answer (up to 10 minutes) and says what happened. X needs the user's own click on X's page."}, func(ctx context.Context, r *mcp.CallToolRequest, in publishIn) (*mcp.CallToolResult, any, error) {
 		return s.publish(ctx, r, in, requester)
 	})
 	mcp.AddTool(srv, &mcp.Tool{Name: "post_list", Annotations: ro,
-		Description: "List the user's posts in prasar: drafts, scheduled, waiting (for approval or the user's click on X), posted (with links) and failed. Newest first."}, s.list)
+		Description: "List the user's posts in vaikhari: drafts, scheduled, waiting (for approval or the user's click on X), posted (with links) and failed. Newest first."}, s.list)
 	mcp.AddTool(srv, &mcp.Tool{Name: "post_accounts", Annotations: ro,
-		Description: "Which networks prasar can post to now: LinkedIn's sign-in (and when it runs out), X's one-click posting."}, s.accounts)
+		Description: "Which networks vaikhari can post to now: LinkedIn's sign-in (and when it runs out), X's one-click posting."}, s.accounts)
 	return srv
 }
 
@@ -123,7 +123,7 @@ func (s *server) draft(_ context.Context, _ *mcp.CallToolRequest, in draftIn) (*
 	if err != nil {
 		return fail(err)
 	}
-	return text(fmt.Sprintf("Saved as draft #%d for %s. The user can finish and post it in prasar (Drafts).", p.ID, names(p.Networks))), nil, nil
+	return text(fmt.Sprintf("Saved as draft #%d for %s. The user can finish and post it in vaikhari (Drafts).", p.ID, names(p.Networks))), nil, nil
 }
 
 type publishIn struct {
@@ -156,7 +156,7 @@ func (s *server) publish(ctx context.Context, _ *mcp.CallToolRequest, in publish
 	p, err = s.a.WaitFor(wctx, p.ID, post.Approval)
 	cancel()
 	if err != nil {
-		return text(fmt.Sprintf("Still waiting for the user's approval (post #%d); NOT posted. They can answer in prasar or with `prasar approve %d`.", p.ID, p.ID)), nil, nil
+		return text(fmt.Sprintf("Still waiting for the user's approval (post #%d); NOT posted. They can answer in vaikhari or with `vaikhari approve %d`.", p.ID, p.ID)), nil, nil
 	}
 	if p.Status == post.Declined || p.Status == post.Cancelled {
 		return text(fmt.Sprintf("The user declined post #%d. Nothing was posted.", p.ID)), nil, nil
@@ -257,7 +257,7 @@ func (s *server) accounts(_ context.Context, _ *mcp.CallToolRequest, _ struct{})
 	return text(Accounts(s.a)), nil, nil
 }
 
-// Accounts says what prasar can post to now.
+// Accounts says what vaikhari can post to now.
 func Accounts(a *app.App) string {
 	li := "LinkedIn: "
 	if t, err := a.LinkedIn(); err != nil {
@@ -265,7 +265,7 @@ func Accounts(a *app.App) string {
 	} else {
 		li += fmt.Sprintf("signed in as %s, for %d more days", t.Name, int(t.Left(a.Now()).Hours()/24))
 	}
-	return li + "\nX: one click: prasar opens X's share page with the post filled in, the user presses Post (no API, free)."
+	return li + "\nX: one click: vaikhari opens X's share page with the post filled in, the user presses Post (no API, free)."
 }
 
 func names(ns []string) string {

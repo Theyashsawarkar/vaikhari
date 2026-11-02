@@ -50,7 +50,7 @@ var Keys = []Key{
 // KeybindingsFile is scripts/keybindings, for Vayu's keybinding search.
 func KeybindingsFile() string {
 	var b strings.Builder
-	b.WriteString("# Keys inside the prasar screen, for Vayu's keybinding search\n")
+	b.WriteString("# Keys inside the vaikhari screen, for Vayu's keybinding search\n")
 	b.WriteString("# (keybind-search.py reads ~/.tmux/plugins/*/scripts). Generated from\n")
 	b.WriteString("# internal/tui/keys.go by `go test ./internal/tui -update`; don't edit.\n")
 	// marker is kept apart from the rest of the line: the binary holds this
@@ -58,7 +58,7 @@ func KeybindingsFile() string {
 	marker := strings.Join([]string{"#", "keybind"}, " ")
 	for _, k := range Keys {
 		where := map[string]string{"write": " (while writing)", "compose": " (Compose tab)", "lists": " (Queue, Drafts, Posted)", "x": " (X popup)"}[k.Where]
-		fmt.Fprintf(&b, "%s: Tmux/prasar | %s | %s%s\n", marker, k.Keys, k.Desc, where)
+		fmt.Fprintf(&b, "%s: Tmux/vaikhari | %s | %s%s\n", marker, k.Keys, k.Desc, where)
 	}
 	return b.String()
 }

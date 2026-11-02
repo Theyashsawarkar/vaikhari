@@ -1,4 +1,4 @@
-module github.com/Theyashsawarkar/prasar
+module github.com/Theyashsawarkar/vaikhari
 
 go 1.26.0
 

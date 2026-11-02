@@ -1,4 +1,4 @@
-// Package store keeps prasar's posts in one SQLite file, shared by the
+// Package store keeps vaikhari's posts in one SQLite file, shared by the
 // screen, the background service and the MCP server: each post is a JSON
 // row, with its status and send time beside it to query by. A status
 // changes only through Transition, which checks the old one, so two
@@ -17,7 +17,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/Theyashsawarkar/prasar/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
 )
 
 // ErrNotFound is a post id that doesn't exist.

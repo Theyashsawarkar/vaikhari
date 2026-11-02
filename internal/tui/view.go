@@ -8,9 +8,9 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/Theyashsawarkar/prasar/internal/post"
-	"github.com/Theyashsawarkar/prasar/internal/ui"
-	"github.com/Theyashsawarkar/prasar/internal/when"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/ui"
+	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
 // View draws the screen.

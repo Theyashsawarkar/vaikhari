@@ -1,7 +1,7 @@
-// Package fake is an in-memory LinkedIn for the tests and `prasar demo`:
+// Package fake is an in-memory LinkedIn for the tests and `vaikhari demo`:
 // sign-in (it answers at once, no browser), who you are, image uploads
-// and posts, at the paths the real one uses. Point prasar at it with
-// PRASAR_LINKEDIN_URL.
+// and posts, at the paths the real one uses. Point vaikhari at it with
+// VAIKHARI_LINKEDIN_URL.
 package fake
 
 import (

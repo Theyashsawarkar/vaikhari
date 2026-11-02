@@ -1,4 +1,4 @@
-// prasar: write once, post to X and LinkedIn. LinkedIn through its free
+// vaikhari: write once, post to X and LinkedIn. LinkedIn through its free
 // API, X through its own share page (you press Post). A screen, a CLI, an
 // MCP server for agents and a small background service for the schedule.
 package main
@@ -22,42 +22,43 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
 
-	"github.com/Theyashsawarkar/prasar/internal/app"
-	"github.com/Theyashsawarkar/prasar/internal/fake"
-	"github.com/Theyashsawarkar/prasar/internal/linkedin"
-	"github.com/Theyashsawarkar/prasar/internal/mcpserver"
-	"github.com/Theyashsawarkar/prasar/internal/post"
-	"github.com/Theyashsawarkar/prasar/internal/tui"
-	"github.com/Theyashsawarkar/prasar/internal/when"
+	"github.com/Theyashsawarkar/vaikhari/internal/app"
+	"github.com/Theyashsawarkar/vaikhari/internal/fake"
+	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
+	"github.com/Theyashsawarkar/vaikhari/internal/mcpserver"
+	"github.com/Theyashsawarkar/vaikhari/internal/post"
+	"github.com/Theyashsawarkar/vaikhari/internal/tui"
+	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
-const usage = `prasar: write once, post to X and LinkedIn.
+const usage = `vaikhari: write once, post to X and LinkedIn.
 
-  prasar                         the screen (? in it lists every key)
-  prasar post TEXT [options]     post from the shell (TEXT "-" reads stdin)
+  vaikhari                         the screen (? in it lists every key)
+  vaikhari post TEXT [options]     post from the shell (TEXT "-" reads stdin)
       --x / --linkedin             only there (default: both, or config's networks)
       --at WHEN                    schedule it: "tomorrow 9am", "fri 6pm", "in 2h"
       --image PATH                 attach an image (repeat for more)
       --draft                      keep it as a draft instead
-  prasar check TEXT              how it fits: X's 280 (and its thread), LinkedIn's 3000
-  prasar list [STATUS]           your posts: draft, scheduled, approval, ready, posted, failed
-  prasar approve [ID]            answer an agent's post (the oldest waiting, without ID)
-  prasar auth linkedin [--setup] sign in to LinkedIn (--setup asks for your app's id and secret)
-  prasar auth status | logout
-  prasar service install|remove|status   publish scheduled posts in the background
-  prasar daemon                  the same, in the foreground
-  prasar mcp [--requester NAME]  MCP server for AI agents (stdio)
-  prasar doctor                  check the setup
-  prasar demo                    try it with a fake LinkedIn (nothing real is posted)
-  prasar --popup KEY             run inside a tmux popup: KEY closes it too
-  prasar --version
+  vaikhari check TEXT              how it fits: X's 280 (and its thread), LinkedIn's 3000
+  vaikhari list [STATUS]           your posts: draft, scheduled, approval, ready, posted, failed
+  vaikhari approve [ID]            answer an agent's post (the oldest waiting, without ID)
+  vaikhari auth linkedin [--setup] sign in to LinkedIn (--setup asks for your app's id and secret)
+  vaikhari auth status | logout
+  vaikhari service install|remove|status   publish scheduled posts in the background
+  vaikhari daemon                  the same, in the foreground
+  vaikhari mcp [--requester NAME]  MCP server for AI agents (stdio)
+  vaikhari doctor                  check the setup
+  vaikhari demo                    try it with a fake LinkedIn (nothing real is posted)
+  vaikhari --popup KEY             run inside a tmux popup: KEY closes it too
+  vaikhari --version
 
-X is posted with one click: prasar opens X's share page with the post
+X is posted with one click: vaikhari opens X's share page with the post
 filled in, you press Post (X's API isn't free). Setup and every option:
-https://github.com/Theyashsawarkar/prasar
+https://github.com/Theyashsawarkar/vaikhari
 `
 
 func main() {
+	app.MoveFormer()
 	args := os.Args[1:]
 	cmd := ""
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
@@ -92,11 +93,11 @@ func main() {
 	case "help":
 		fmt.Print(usage)
 	default:
-		fmt.Fprintf(os.Stderr, "prasar: unknown command %q\n\n%s", cmd, usage)
+		fmt.Fprintf(os.Stderr, "vaikhari: unknown command %q\n\n%s", cmd, usage)
 		os.Exit(2)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "prasar:", err)
+		fmt.Fprintln(os.Stderr, "vaikhari:", err)
 		os.Exit(1)
 	}
 }
@@ -111,7 +112,7 @@ func withApp(f func(*app.App) error) error {
 }
 
 func screen(args []string) error {
-	fs := flag.NewFlagSet("prasar", flag.ExitOnError)
+	fs := flag.NewFlagSet("vaikhari", flag.ExitOnError)
 	popup := fs.String("popup", "", "")
 	version := fs.Bool("version", false, "")
 	help := fs.Bool("help", false, "")
@@ -120,7 +121,7 @@ func screen(args []string) error {
 	_ = fs.Parse(args)
 	switch {
 	case *version:
-		fmt.Println("prasar", app.Version)
+		fmt.Println("vaikhari", app.Version)
 		return nil
 	case *help:
 		fmt.Print(usage)
@@ -201,7 +202,7 @@ func postCmd(args []string) error {
 		if got.Status == post.Scheduled {
 			fmt.Printf("Scheduled #%d for %s.\n", got.ID, when.Say(time.UnixMilli(got.SendAt), a.Now()))
 			if !serviceActive() {
-				fmt.Println("Note: the background service isn't running, so it goes out only while prasar is open: prasar service install")
+				fmt.Println("Note: the background service isn't running, so it goes out only while vaikhari is open: vaikhari service install")
 			}
 			return nil
 		}
@@ -230,7 +231,7 @@ func confirmX(a *app.App, p post.Post) error {
 			label = fmt.Sprintf("X (part %d of %d)", part+1, parts)
 		}
 		if !term.IsTerminal(int(os.Stdin.Fd())) {
-			fmt.Printf("%s: opened in your browser; press Post there. Confirm it with: prasar (Queue, o)\n", label)
+			fmt.Printf("%s: opened in your browser; press Post there. Confirm it with: vaikhari (Queue, o)\n", label)
 			return nil
 		}
 		fmt.Printf("%s: opened in your browser with the post filled in. Press Post there,\nthen paste its link here (optional) and press Enter (s skips X): ", label)
@@ -324,13 +325,13 @@ func auth(a *app.App, args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Signed in as %s. It lasts %d days (LinkedIn's limit); prasar says when it runs low.\n", t.Name, int(t.Left(a.Now()).Hours()/24))
+	fmt.Printf("Signed in as %s. It lasts %d days (LinkedIn's limit); vaikhari says when it runs low.\n", t.Name, int(t.Left(a.Now()).Hours()/24))
 	return nil
 }
 
 func setupLinkedIn(a *app.App) error {
 	redirect := a.Config.LinkedInApp().Redirect()
-	fmt.Printf(`prasar posts to LinkedIn through an app of your own (free, about 2 minutes):
+	fmt.Printf(`vaikhari posts to LinkedIn through an app of your own (free, about 2 minutes):
 
   1. https://www.linkedin.com/developers/apps/new : any name, your LinkedIn
      page as the company (LinkedIn needs one; a page you create works), a logo.
@@ -371,12 +372,12 @@ func setupLinkedIn(a *app.App) error {
 func daemon(a *app.App) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	fmt.Fprintln(os.Stderr, "prasar: publishing scheduled posts as they fall due")
+	fmt.Fprintln(os.Stderr, "vaikhari: publishing scheduled posts as they fall due")
 	t := time.NewTicker(15 * time.Second)
 	defer t.Stop()
 	for {
 		for _, p := range a.DeliverDue(ctx) {
-			fmt.Fprintf(os.Stderr, "prasar: #%d due: %s\n", p.ID, p.Status)
+			fmt.Fprintf(os.Stderr, "vaikhari: #%d due: %s\n", p.ID, p.Status)
 		}
 		select {
 		case <-ctx.Done():
@@ -392,11 +393,11 @@ func unitPath() string {
 		home, _ := os.UserHomeDir()
 		dir = filepath.Join(home, ".config")
 	}
-	return filepath.Join(dir, "systemd", "user", "prasar.service")
+	return filepath.Join(dir, "systemd", "user", "vaikhari.service")
 }
 
 func serviceActive() bool {
-	return exec.Command("systemctl", "--user", "is-active", "--quiet", "prasar.service").Run() == nil
+	return exec.Command("systemctl", "--user", "is-active", "--quiet", "vaikhari.service").Run() == nil
 }
 
 func service(args []string) error {
@@ -411,8 +412,8 @@ func service(args []string) error {
 	switch args[0] {
 	case "install":
 		unit := fmt.Sprintf(`[Unit]
-Description=prasar: publishes your scheduled posts
-Documentation=https://github.com/Theyashsawarkar/prasar
+Description=vaikhari: publishes your scheduled posts
+Documentation=https://github.com/Theyashsawarkar/vaikhari
 StartLimitIntervalSec=0
 
 [Service]
@@ -434,13 +435,13 @@ WantedBy=default.target
 		if err := sc("daemon-reload"); err != nil {
 			return err
 		}
-		if err := sc("enable", "--now", "prasar.service"); err != nil {
+		if err := sc("enable", "--now", "vaikhari.service"); err != nil {
 			return err
 		}
-		fmt.Printf("Installed %s and started it.\nLogs: journalctl --user -u prasar -f\n", unitPath())
+		fmt.Printf("Installed %s and started it.\nLogs: journalctl --user -u vaikhari -f\n", unitPath())
 		return nil
 	case "remove", "uninstall":
-		_ = sc("disable", "--now", "prasar.service")
+		_ = sc("disable", "--now", "vaikhari.service")
 		if err := os.Remove(unitPath()); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
@@ -448,7 +449,7 @@ WantedBy=default.target
 		fmt.Println("Removed the background service.")
 		return nil
 	case "status":
-		return sc("status", "--no-pager", "prasar.service")
+		return sc("status", "--no-pager", "vaikhari.service")
 	}
 	return fmt.Errorf("unknown service command %q", args[0])
 }
@@ -475,7 +476,7 @@ func doctor(a *app.App) error {
 	}
 	have := func(b string) bool { _, err := exec.LookPath(b); return err == nil }
 	line(true, "config", a.Paths.ConfigFile())
-	line(a.Config.LinkedIn.ClientID != "", "LinkedIn app", map[bool]string{true: "set", false: "not set: prasar auth linkedin --setup"}[a.Config.LinkedIn.ClientID != ""])
+	line(a.Config.LinkedIn.ClientID != "", "LinkedIn app", map[bool]string{true: "set", false: "not set: vaikhari auth linkedin --setup"}[a.Config.LinkedIn.ClientID != ""])
 	if t, err := a.LinkedIn(); err != nil {
 		line(false, "LinkedIn sign-in", err.Error())
 	} else {
@@ -485,7 +486,7 @@ func doctor(a *app.App) error {
 	line(have("xdg-open"), "browser (xdg-open)", "opens X's share page")
 	line(have("wl-copy") || have("xclip"), "clipboard", "wl-copy or xclip: images for X, copying links")
 	line(have("notify-send"), "notifications", "notify-send: scheduled X posts, agents' posts")
-	line(serviceActive(), "background service", map[bool]string{true: "running", false: "not running: prasar service install"}[serviceActive()])
+	line(serviceActive(), "background service", map[bool]string{true: "running", false: "not running: vaikhari service install"}[serviceActive()])
 	if have("secret-tool") {
 		line(true, "keyring", "the LinkedIn sign-in is kept in your keyring")
 	} else {
@@ -494,19 +495,19 @@ func doctor(a *app.App) error {
 	return nil
 }
 
-// demo is prasar with a fake LinkedIn, in a throwaway folder: nothing
+// demo is vaikhari with a fake LinkedIn, in a throwaway folder: nothing
 // real is posted, and X's page isn't opened.
 func demo() error {
-	dir, err := os.MkdirTemp("", "prasar-demo-")
+	dir, err := os.MkdirTemp("", "vaikhari-demo-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
 	f := fake.New()
 	defer f.Close()
-	os.Setenv("PRASAR_HOME", dir)
-	os.Setenv("PRASAR_LINKEDIN_URL", f.URL)
-	os.Setenv("PRASAR_NO_KEYRING", "1")
+	os.Setenv("VAIKHARI_HOME", dir)
+	os.Setenv("VAIKHARI_LINKEDIN_URL", f.URL)
+	os.Setenv("VAIKHARI_NO_KEYRING", "1")
 	a, err := app.Open(app.DefaultPaths())
 	if err != nil {
 		return err
@@ -535,7 +536,7 @@ func seed(a *app.App) {
 	_, _ = a.Submit(ctx, s, false)
 
 	ag := a.New()
-	ag.Text = "Shipped: prasar 0.1, a terminal app that posts to X and LinkedIn from one editor. LinkedIn goes out through its API, X opens with the post filled in. Free, open source. #golang"
+	ag.Text = "Shipped: vaikhari 0.1, a terminal app that posts to X and LinkedIn from one editor. LinkedIn goes out through its API, X opens with the post filled in. Free, open source. #golang"
 	ag.Origin, ag.Requester, ag.Note = post.Agent, "Claude Code", "You asked for a launch post for the release"
 	_, _ = a.Submit(ctx, ag, false)
 

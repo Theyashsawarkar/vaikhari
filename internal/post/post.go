@@ -1,4 +1,4 @@
-// Package post is what prasar posts: one text for X and LinkedIn, its
+// Package post is what vaikhari posts: one text for X and LinkedIn, its
 // images, when it goes out, and what happened on each network. It also
 // knows each network's rules: X's 280 weighted characters (and how to
 // split a longer text into a thread), LinkedIn's 3000 characters and the

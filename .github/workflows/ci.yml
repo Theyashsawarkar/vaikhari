@@ -18,17 +18,17 @@ jobs:
           go vet ./...
           test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - name: ShellCheck
-        run: shellcheck -S warning prasar.tmux install.sh scripts/prasar-run
+        run: shellcheck -S warning vaikhari.tmux install.sh scripts/vaikhari-run
       - name: Tests
         run: go test ./...
       - name: Build and CLI
         run: |
           make build
-          ./bin/prasar --version
-          ./bin/prasar --help
+          ./bin/vaikhari --version
+          ./bin/vaikhari --help
       - name: make install
         run: |
           make install DESTDIR="$RUNNER_TEMP/pkg" PREFIX=/usr
-          test -x "$RUNNER_TEMP/pkg/usr/bin/prasar"
+          test -x "$RUNNER_TEMP/pkg/usr/bin/vaikhari"
       - name: Website is up to date
         run: python3 scripts/build-site.py --check
