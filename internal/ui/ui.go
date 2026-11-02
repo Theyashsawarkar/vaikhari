@@ -1,5 +1,5 @@
 // Package ui draws the screen's pieces the way the other Vayu terminal
-// tools do (sandesh, pattan, nauka): rounded boxes with the title in the border,
+// tools do (narada, pattan, nauka): rounded boxes with the title in the border,
 // a tab row, a footer of round key caps, popups drawn over the screen.
 // Colours follow varna's desktop theme (~/.local/state/varna/palette.json)
 // and change live when it does; without varna they are Catppuccin Mocha.

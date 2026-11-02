@@ -55,7 +55,7 @@ one click.
   agent) check, draft and propose posts; every one waits for your approval
   in a popup, where you can edit it ([ADR 3](docs/adr/0003-agents-always-ask.md)).
 - **Looks like the rest of your terminal**: rounded boxes and key caps like
-  sandesh, pattan and nauka, in your [varna](https://github.com/Theyashsawarkar/varna)
+  narada, pattan and nauka, in your [varna](https://github.com/Theyashsawarkar/varna)
   theme's colours (Catppuccin Mocha without it), changing live.
 
 ## Install

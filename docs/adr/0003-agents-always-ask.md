@@ -5,7 +5,7 @@
 
 ## Context
 
-`vaikhari mcp` lets AI agents write posts for you. A post is public, under your name, and can't really be taken back once people have seen it. sandesh (mail) lets an agent send to people you've written to before without asking; nothing like that "safe audience" exists for a public post.
+`vaikhari mcp` lets AI agents write posts for you. A post is public, under your name, and can't really be taken back once people have seen it. narada (mail) lets an agent send to people you've written to before without asking; nothing like that "safe audience" exists for a public post.
 
 ## Decision
 

@@ -15,8 +15,8 @@ config.toml.
   schedule); `internal/store` SQLite; `internal/linkedin` sign-in and the
   API; `internal/fake` a fake LinkedIn for tests and `vaikhari demo`;
   `internal/tui` the screen; `internal/mcpserver` the agent tools;
-  `internal/ui` the drawing kit shared in look with sandesh, pattan and
-  nauka; `internal/when` the time parser (sandesh's).
+  `internal/ui` the drawing kit shared in look with narada, pattan and
+  nauka; `internal/when` the time parser (narada's).
 - **It must stay free**: X goes through its share page, never its paid API
   or anything that logs in as the user (ADR 2). LinkedIn through the user's
   own app (ADR 4).
