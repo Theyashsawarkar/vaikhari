@@ -2,6 +2,10 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## Unreleased
+
+- Screenshots in the README and on the website.
+
 ## v0.1.1 -- 2026-10-28
 
 - The previews share their column by what they hold: a long X thread gets

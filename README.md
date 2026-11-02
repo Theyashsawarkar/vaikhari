@@ -6,6 +6,14 @@ and an AI agent that can draft posts for you (you approve every one).
 **Free:** LinkedIn through its free API, X through its own share page with
 one click.
 
+<p align="center">
+  <img alt="prasar's Compose tab: the post on the left, live previews of how X and LinkedIn will show it on the right, with the character counts" src="assets/screenshots/compose.png" width="100%">
+</p>
+<p align="center">
+  <img alt="The Queue: an agent's post waiting for your approval, with its reason, and a post scheduled for tomorrow" src="assets/screenshots/queue.png" width="49%">
+</p>
+<p align="center"><sub>Screenshots use <code>prasar demo</code>: a made-up account.</sub></p>
+
 > *Prasar* (प्रसार) is Sanskrit for "spreading out, broadcast".
 
 ## Contents
