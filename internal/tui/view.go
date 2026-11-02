@@ -50,11 +50,7 @@ func (m *Model) overlay(base string, box []string) string {
 
 func (m *Model) header() string {
 	if m.approving {
-		who := m.cur.Requester
-		if who == "" {
-			who = "An agent"
-		}
-		left := " " + m.st.Pill("Approve post", m.st.T.Peach) + "  " + m.st.Bold.Render(who) + m.st.Sub.Render(" wants to post this as you")
+		left := " " + m.st.Pill("Approve a post", m.st.T.Red) + m.st.Muted.Render(fmt.Sprintf("  #%d · waits for you, nothing posts until you answer", m.cur.ID))
 		return ui.Row(left, m.accounts()+" ", m.w)
 	}
 	tabs := make([]string, len(tabNames))
@@ -80,6 +76,18 @@ func (m *Model) accounts() string {
 	return li + m.st.Muted.Render("  ·  ") + m.st.Text.Render("X") + m.st.Muted.Render(" one click")
 }
 
+// postLabel says what y does: post where, by name.
+func (m *Model) postLabel() string {
+	p := m.editorPost()
+	switch {
+	case p.On(post.X) && p.On(post.LinkedIn):
+		return "Post on both"
+	case p.On(post.X):
+		return "Post on X"
+	}
+	return "Post on LinkedIn"
+}
+
 func (m *Model) footer() string {
 	if m.busy != "" {
 		return m.st.Footer("…", nil, m.st.Accent.Render(m.busy), m.w)
@@ -97,7 +105,7 @@ func (m *Model) footer() string {
 	case m.approving && m.editing:
 		mode, keys = "EDIT", [][2]string{{"^S", "approve"}, {"Esc", "done editing"}}
 	case m.approving:
-		mode, keys = "APPROVE", [][2]string{{"y", "approve & post"}, {"e", "edit"}, {"n", "decline"}, {"q", "later"}}
+		mode, keys = "APPROVE", [][2]string{{"y", m.postLabel()}, {"e", "Edit first"}, {"n", "Decline"}, {"q", "Decide later"}}
 	case m.editing:
 		mode, keys = "WRITE", [][2]string{{"^S", "post"}, {"^T", "schedule"}, {"^D", "draft"}, {"^X", "X"}, {"^L", "LinkedIn"},
 			{"^O", "image"}, {"^N", "new"}, {"Esc", "more keys"}}
@@ -131,17 +139,59 @@ func (m *Model) footer() string {
 
 // ---------------------------------------------------------------- compose
 
+// approveTop: who wants to post what, what you asked, what's at stake.
+func (m *Model) approveTop(p post.Post) []string {
+	st := m.st
+	who := p.Requester
+	if who == "" {
+		who = "An agent"
+	}
+	nets := make([]string, 0, len(p.Networks))
+	for _, n := range p.Networks {
+		nets = append(nets, post.Name(n))
+	}
+	where := strings.Join(nets, " and ")
+	lines := []string{" " + st.Bold.Render(who+" wants to post ") + st.Red.Bold(true).Render("publicly, as you") + st.Bold.Render(", on "+where)}
+	if p.Note != "" {
+		lines = append(lines, " "+st.Muted.Render("You asked: ")+st.Sub.Render("“"+strings.TrimRight(ui.Fit(p.Note, max(10, m.w-16)), " ")+"”"))
+	}
+	chips := []string{st.Pill("public", st.T.Red)}
+	if m.ed.Value() != m.cur.Text {
+		chips = append(chips, st.Pill("edited by you: y posts your version", st.T.Yellow))
+	}
+	if n := len(p.Images); n > 0 {
+		chips = append(chips, st.Chip(fmt.Sprintf("%d image(s)", n), st.T.Sub))
+	}
+	if p.SendAt > 0 {
+		chips = append(chips, st.Chip("goes "+time.UnixMilli(p.SendAt).Format("Mon 02 Jan 15:04"), st.T.Sub))
+	} else {
+		chips = append(chips, st.Chip("now, not scheduled", st.T.Sub))
+	}
+	if p.On(post.X) {
+		chips = append(chips, st.Chip("X: you press Post in the browser", st.T.Yellow))
+	}
+	return append(lines, " "+strings.Join(chips, " "), "")
+}
+
 func (m *Model) composeView() []string {
+	if m.approving {
+		top := m.approveTop(m.editorPost())
+		rest := m.composeBody(m.bodyHeight() - len(top))
+		return append(top, rest...)
+	}
+	return m.composeBody(m.bodyHeight())
+}
+
+func (m *Model) composeBody(bh int) []string {
 	left := m.leftWidth()
-	bh := m.bodyHeight()
-	edH := m.editorHeight()
+	edH := min(m.editorHeight(), max(3, bh-5))
 	text := m.ed.Value()
 	p := m.editorPost()
 
 	title := "Write"
 	switch {
 	case m.approving:
-		title = fmt.Sprintf("Post #%d", m.cur.ID)
+		title = "the post, exactly"
 	case m.cur.ID != 0:
 		title = fmt.Sprintf("Write · #%d %s", m.cur.ID, m.cur.Status)
 	}

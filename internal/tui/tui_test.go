@@ -148,11 +148,29 @@ func TestApproveScreen(t *testing.T) {
 	m := New(a, Options{Approve: p.ID})
 	size(m)
 	s := screen(m)
-	for _, want := range []string{"Approve post", "Claude Code", "wants to post this as you", "From the agent", "why: launch post", "APPROVE"} {
+	for _, want := range []string{"Approve a post", "Claude Code wants to post publicly, as you, on LinkedIn", "You asked: “launch post”", "public", "now, not scheduled", "From the agent", "APPROVE", "Post on LinkedIn", "the post, exactly"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing %q in\n%s", want, s)
 		}
 	}
+	if testing.Verbose() {
+		t.Log("\n" + s)
+	}
+	for _, sz := range [][2]int{{200, 60}, {120, 30}, {90, 24}, {60, 18}, {40, 12}} {
+		m.Update(tea.WindowSizeMsg{Width: sz[0], Height: sz[1]})
+		v := m.View()
+		if h := strings.Count(v, "\n") + 1; h > sz[1] {
+			t.Errorf("%v: %d lines", sz, h)
+		}
+	}
+	size(m)
+	// what you were typing as it opened can't answer it
+	m.shownAt = time.Now()
+	run(m, key(m, "y"))
+	if len(f.Posts()) != 0 {
+		t.Fatal("y answered as the popup opened")
+	}
+	m.shownAt = time.Time{}
 	run(m, key(m, "y"))
 	if len(f.Posts()) != 1 || f.Posts()[0].Commentary != "From the agent" {
 		t.Fatal(f.Posts())

@@ -2,6 +2,14 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## v0.2.1 -- 2026-11-02
+
+- **A new approval screen**: one sentence says who wants to post, publicly and
+  as you, on which networks; then what you asked, and labels for what's at
+  stake. The post sits beside each network's preview, and the answer says what
+  it does ("Post on both").
+- A key pressed as the popup opens (you were typing elsewhere) can't answer it.
+
 ## v0.2.0 -- 2026-11-02
 
 - **Renamed from prasar to vaikhari** (वैखरी, speech spoken aloud: the last of

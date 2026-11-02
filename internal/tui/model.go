@@ -76,6 +76,7 @@ type Model struct {
 	msgAt  time.Time
 
 	approving bool // opened by `vaikhari approve`
+	shownAt   time.Time
 	quitAfter bool // quit once the X step is done (approve popup)
 }
 
@@ -129,6 +130,7 @@ func New(a *app.App, opt Options) *Model {
 			m.flash(fmt.Sprintf("#%d is %s: nothing to approve", p.ID, p.Status), true)
 		default:
 			m.approving = true
+			m.shownAt = time.Now()
 			m.load(p)
 		}
 	} else {
@@ -292,6 +294,11 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 		return m.editKey(k)
 	}
 	if m.approving {
+		// A popup can open while you're typing elsewhere: what you were
+		// typing can't answer it.
+		if (s == "y" || s == "n") && time.Since(m.shownAt) < armAfter {
+			return nil
+		}
 		switch s {
 		case "y", "ctrl+s":
 			return m.approve()
@@ -814,6 +821,9 @@ func (m *Model) openLink(p post.Post) tea.Cmd {
 	}
 	return nil
 }
+
+// armAfter is how long a new approval ignores y and n.
+const armAfter = 400 * time.Millisecond
 
 func (m *Model) approve() tea.Cmd {
 	t := m.ed.Value()
