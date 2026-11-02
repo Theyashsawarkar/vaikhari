@@ -370,6 +370,9 @@ func (m *Model) listView() []string {
 		return box
 	}
 	detailH := min(14, bh/2)
+	if sel := m.sel[m.tab]; sel < len(l) && l[sel].Status == post.Approval {
+		detailH = max(detailH, bh*2/3) // room for the previews you approve
+	}
 	tableH := bh - detailH
 	cols := []ui.Column{{Title: "#", Width: 4}, {Title: "When", Width: 15}, {Title: "To", Width: 15}, {Title: "State", Width: 26}, {Title: "Post", Width: 0}}
 	var rows [][]string
@@ -464,6 +467,9 @@ func (m *Model) detailTitle(p post.Post) string {
 }
 
 func (m *Model) detail(p post.Post, w, h int) []string {
+	if p.Status == post.Approval {
+		return m.approvalDetail(p, w, h)
+	}
 	var lines []string
 	if p.Note != "" {
 		lines = append(lines, m.st.Peach.Render("Why: ")+m.st.Sub.Render(p.Note), "")
@@ -502,6 +508,53 @@ func (m *Model) detail(p post.Post, w, h int) []string {
 		lines = append(lines, m.st.Muted.Render(ui.Fit(post.Name(n), 10))+st)
 	}
 	return lines
+}
+
+// approvalDetail is what you approve: one sentence (who wants to post
+// where, and that it's public), the agent's reason, and the post exactly as
+// X and LinkedIn will show it, side by side.
+func (m *Model) approvalDetail(p post.Post, w, h int) []string {
+	who := p.Requester
+	if who == "" {
+		who = "An agent"
+	}
+	var where []string
+	for _, n := range p.Networks {
+		where = append(where, post.Name(n))
+	}
+	badge := lipgloss.NewStyle().Background(lipgloss.Color(m.st.T.Red)).Foreground(lipgloss.Color(m.st.T.Base)).Bold(true).Render(" public · can't be unsent ")
+	head := m.st.Peach.Bold(true).Render(who) + m.st.Text.Render(" wants to post to ") + m.st.Bold.Render(strings.Join(where, " and "))
+	at := "now"
+	if p.SendAt > 0 {
+		at = when.Say(time.UnixMilli(p.SendAt), m.a.Now())
+	}
+	head += m.st.Muted.Render(" · "+at) + "  " + badge
+	lines := []string{head}
+	if p.Note != "" {
+		lines = append(lines, m.st.Peach.Render("▍")+m.st.Sub.Italic(true).Render(" “"+p.Note+"”"))
+	}
+	lines = append(lines, "")
+	room := max(4, h-len(lines)-1)
+	half := (w - 3) / 2
+	var cols []string
+	if p.On(post.X) {
+		cols = append(cols, lipgloss.NewStyle().Width(half).Render(strings.Join(fitRows(m.xPreview(p, p.Text, half, room), room), "\n")))
+	}
+	if p.On(post.LinkedIn) {
+		cols = append(cols, lipgloss.NewStyle().Width(half).Render(strings.Join(fitRows(m.linkedInPreview(p, p.Text, half, room), room), "\n")))
+	}
+	if len(cols) == 2 {
+		cols = []string{cols[0], "   ", cols[1]}
+	}
+	lines = append(lines, strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, cols...), "\n")...)
+	return lines
+}
+
+func fitRows(l []string, n int) []string {
+	if len(l) > n {
+		return l[:n]
+	}
+	return l
 }
 
 // ---------------------------------------------------------------- popups
