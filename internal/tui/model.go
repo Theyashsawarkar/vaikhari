@@ -78,6 +78,9 @@ type Model struct {
 	approving bool // opened by `vaikhari approve`
 	shownAt   time.Time
 	quitAfter bool // quit once the X step is done (approve popup)
+	view      int  // what the post frame shows (p): exactly, or a network's preview
+	scroll    int  // the post frame's scroll
+	result    *answered
 }
 
 type prompt struct {
@@ -294,25 +297,10 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 		return m.editKey(k)
 	}
 	if m.approving {
-		// A popup can open while you're typing elsewhere: what you were
-		// typing can't answer it.
-		if (s == "y" || s == "n") && time.Since(m.shownAt) < armAfter {
+		if m.result != nil {
 			return nil
 		}
-		switch s {
-		case "y", "ctrl+s":
-			return m.approve()
-		case "n":
-			return m.decline()
-		case "e", "i", "enter":
-			m.editing = true
-			return m.ed.Focus()
-		case "q", "esc":
-			return tea.Quit
-		case "?":
-			m.help = true
-		}
-		return nil
+		return m.approveKey(s)
 	}
 	switch s {
 	case "q":
@@ -378,7 +366,7 @@ func (m *Model) editKey(k tea.KeyMsg) tea.Cmd {
 	if m.approving && k.String() == "ctrl+s" {
 		m.editing = false
 		m.ed.Blur()
-		return m.approve()
+		return m.approve(nil, 0)
 	}
 	if cmd, ok := m.composeCtrl(k.String()); ok {
 		return cmd
@@ -562,7 +550,10 @@ func (m *Model) published(r publishedMsg) tea.Cmd {
 		return nil
 	}
 	if m.approving {
-		return tea.Tick(1500*time.Millisecond, func(time.Time) tea.Msg { return tea.QuitMsg{} })
+		if r.err != nil && p.Status == post.Approval {
+			return nil // not answered: the error shows, try again
+		}
+		return m.answered(m.approvedResult(p, r.err))
 	}
 	return nil
 }
@@ -598,7 +589,7 @@ func (m *Model) xwaitKey(k tea.KeyMsg) tea.Cmd {
 	case "esc":
 		m.xwait = nil
 		m.flash(fmt.Sprintf("#%d stays in Queue: o opens X again.", w.id), false)
-		return m.quitIfApproving()
+		return m.quitIfApproving(answered{title: "✓ Approved", sub: "X still waits for your click.", tiny: "o in vaikhari's Queue opens it again"})
 	case "ctrl+k":
 		m.xwait = nil
 		if _, err := m.a.SkipX(w.id); err != nil {
@@ -607,7 +598,7 @@ func (m *Model) xwaitKey(k tea.KeyMsg) tea.Cmd {
 			m.flash("Skipped X for this post.", false)
 		}
 		m.reload()
-		return m.quitIfApproving()
+		return m.quitIfApproving(answered{title: "✓ Approved", sub: "X skipped: nothing goes there."})
 	case "ctrl+o":
 		if _, err := m.a.OpenX(w.id); err != nil {
 			m.flash(err.Error(), true)
@@ -636,16 +627,16 @@ func (m *Model) xwaitKey(k tea.KeyMsg) tea.Cmd {
 			return nil
 		}
 		m.flash(m.summary(p), false)
-		return m.quitIfApproving()
+		return m.quitIfApproving(m.approvedResult(p, nil))
 	}
 	var cmd tea.Cmd
 	w.in, cmd = w.in.Update(k)
 	return cmd
 }
 
-func (m *Model) quitIfApproving() tea.Cmd {
+func (m *Model) quitIfApproving(r answered) tea.Cmd {
 	if m.approving {
-		return tea.Tick(1200*time.Millisecond, func(time.Time) tea.Msg { return tea.QuitMsg{} })
+		return m.answered(r)
 	}
 	return nil
 }
@@ -825,15 +816,6 @@ func (m *Model) openLink(p post.Post) tea.Cmd {
 // armAfter is how long a new approval ignores y and n.
 const armAfter = 400 * time.Millisecond
 
-func (m *Model) approve() tea.Cmd {
-	t := m.ed.Value()
-	var edited *string
-	if t != m.cur.Text {
-		edited = &t
-	}
-	return m.approveID(m.cur.ID, edited)
-}
-
 func (m *Model) approveID(id int64, text *string) tea.Cmd {
 	m.busy = "Approving…"
 	a := m.a
@@ -841,15 +823,6 @@ func (m *Model) approveID(id int64, text *string) tea.Cmd {
 		got, err := a.Approve(context.Background(), id, text, true)
 		return publishedMsg{p: got, err: err, action: "approve"}
 	}
-}
-
-func (m *Model) decline() tea.Cmd {
-	if err := m.a.Decline(m.cur.ID); err != nil {
-		m.flash(err.Error(), true)
-		return nil
-	}
-	m.flash("Declined. Nothing was posted.", false)
-	return tea.Tick(900*time.Millisecond, func(time.Time) tea.Msg { return tea.QuitMsg{} })
 }
 
 func (m *Model) signIn() tea.Cmd {

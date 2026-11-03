@@ -202,6 +202,20 @@ click. Tabs count what's in Queue and Drafts.
 | `y` | Copy the post's link |
 | `v` | Open the post's link in the browser |
 
+**Approving an agent's post** (`vaikhari approve`, and the popup an agent's post opens)
+
+| Key | Action |
+|---|---|
+| `y` | Approve it as asked (posts on every network it names) |
+| `1` | Approve it for LinkedIn only (when it asks for both) |
+| `2` | Approve it for X only (when it asks for both) |
+| `t` | Schedule it: approve it for another time |
+| `e` | Edit it first (Ctrl+S approves your version, Esc comes back) |
+| `p` | Show it as each network shows it, then exactly again |
+| `j / k` | Scroll the post when it's longer than its frame |
+| `n` | Decline it (nothing is posted, the agent is told) |
+| `q / Esc` | Leave it for later (it waits in Queue) |
+
 **While X waits for your click**
 
 | Key | Action |
@@ -274,6 +288,16 @@ claude mcp add --scope user vaikhari -- vaikhari mcp --requester "Claude Code"
 | `post_publish` | Propose a post, now or `send_at` later: **you approve it first** (a tmux popup on the agent's pane, and a notification), and may edit or decline it; the call waits up to 10 minutes and reports what happened |
 | `post_list` | Your posts and their links |
 | `post_accounts` | LinkedIn's sign-in and days left; X's one click |
+
+The approval reads as one sentence ("Claude Code wants to post publicly, as
+you, on 2 networks"), then what you asked and labels for what's at stake
+(public, images, now or when). Beside the post, exactly as it goes (with
+where LinkedIn folds it and where X's thread breaks marked), each network's
+facts: who it posts as, its length against the limit, where LinkedIn's "see
+more" cuts it, X's thread, how it goes out. `p` shows it as each network
+will; `1` / `2` approve it for one network, `t` for another time. After you
+answer, the popup says what happened and closes. Narrow, the facts stack
+above the post.
 
 Agents never post on their own, and are told X needs your click. What they
 did is logged in `~/.local/state/vaikhari/agent.log`.

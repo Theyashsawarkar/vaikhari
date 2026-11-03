@@ -18,6 +18,9 @@ func (m *Model) View() string {
 	if m.w == 0 || m.h == 0 {
 		return ""
 	}
+	if m.approving && !m.editing {
+		return m.overlays(m.approveScreen())
+	}
 	var body []string
 	switch {
 	case m.approving || m.tab == tabCompose:
@@ -28,7 +31,12 @@ func (m *Model) View() string {
 	for len(body) < m.bodyHeight() {
 		body = append(body, "")
 	}
-	out := m.header() + "\n" + strings.Join(body[:m.bodyHeight()], "\n") + "\n" + m.footer()
+	return m.overlays(m.header() + "\n" + strings.Join(body[:m.bodyHeight()], "\n") + "\n" + m.footer())
+}
+
+// overlays draws what's open over the screen: the keys, X's step, a
+// question.
+func (m *Model) overlays(out string) string {
 	switch {
 	case m.help:
 		out = m.overlay(out, m.helpBox())
@@ -337,15 +345,7 @@ func (m *Model) linkedInPreview(p post.Post, text string, w, h int) []string {
 		return []string{head, "", m.st.Muted.Render("Your post shows here as LinkedIn will show it.")}
 	}
 	lines := []string{head, ""}
-	r := []rune(t)
-	shown := t
-	folded := len(r) > post.LinkedInFold
-	if folded {
-		shown = string(r[:post.LinkedInFold])
-		if i := strings.LastIndexAny(shown, " \n"); i > post.LinkedInFold*2/3 {
-			shown = shown[:i] // the feed doesn't cut a word in half
-		}
-	}
+	shown, folded := linkedInFold(t)
 	const more = "…see more"
 	if folded {
 		shown = strings.TrimRight(shown, " ") + " " + more // wrapped with the text, so it's never cut off
@@ -367,6 +367,20 @@ func (m *Model) linkedInPreview(p post.Post, text string, w, h int) []string {
 		label += " · folds after ~210"
 	}
 	return pinBottom(lines, h, m.meter(n, post.LinkedInLimit, w, label))
+}
+
+// linkedInFold is what LinkedIn's feed shows of its text before
+// "…see more", and whether it folds at all.
+func linkedInFold(t string) (string, bool) {
+	r := []rune(t)
+	if len(r) <= post.LinkedInFold {
+		return t, false
+	}
+	shown := string(r[:post.LinkedInFold])
+	if i := strings.LastIndexAny(shown, " \n"); i > post.LinkedInFold*2/3 {
+		shown = shown[:i] // the feed doesn't cut a word in half
+	}
+	return shown, true
 }
 
 // pinBottom fits lines in h rows with last on the bottom row.
@@ -632,7 +646,7 @@ func (m *Model) xwaitBox() []string {
 func (m *Model) helpLines() []string {
 	var out []string
 	where := ""
-	heads := map[string]string{"write": "While writing", "compose": "Compose", "": "Everywhere", "lists": "Queue, Drafts, Posted", "x": "While X waits for your click"}
+	heads := map[string]string{"write": "While writing", "compose": "Compose", "": "Everywhere", "lists": "Queue, Drafts, Posted", "approve": "Approving an agent's post", "x": "While X waits for your click"}
 	for _, k := range Keys {
 		if k.Where != where || len(out) == 0 {
 			where = k.Where

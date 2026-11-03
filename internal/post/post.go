@@ -216,6 +216,10 @@ func XParts(text string) []string {
 	return chunks
 }
 
+// Breaks is the text cut at its "---" lines: the parts you split it into,
+// before any part over 280 is split again for X.
+func Breaks(text string) []string { return splitBreaks(text) }
+
 func splitBreaks(text string) []string {
 	var out []string
 	var cur []string

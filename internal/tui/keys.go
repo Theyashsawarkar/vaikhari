@@ -41,6 +41,15 @@ var Keys = []Key{
 	{"d", "Delete the draft (asks first)", "lists"},
 	{"y", "Copy the post's link", "lists"},
 	{"v", "Open the post's link in the browser", "lists"},
+	{"y", "Approve it as asked (posts on every network it names)", "approve"},
+	{"1", "Approve it for LinkedIn only (when it asks for both)", "approve"},
+	{"2", "Approve it for X only (when it asks for both)", "approve"},
+	{"t", "Schedule it: approve it for another time", "approve"},
+	{"e", "Edit it first (Ctrl+S approves your version, Esc comes back)", "approve"},
+	{"p", "Show it as each network shows it, then exactly again", "approve"},
+	{"j / k", "Scroll the post when it's longer than its frame", "approve"},
+	{"n", "Decline it (nothing is posted, the agent is told)", "approve"},
+	{"q / Esc", "Leave it for later (it waits in Queue)", "approve"},
 	{"Enter", "Confirm it's posted on X (paste its link first for a thread's next part)", "x"},
 	{"Ctrl+O", "Open X's page again", "x"},
 	{"Ctrl+K", "Cancel X for this post (LinkedIn is unaffected)", "x"},
@@ -57,7 +66,7 @@ func KeybindingsFile() string {
 	// format string, and the keybinding search scans plugins' bin/ folders.
 	marker := strings.Join([]string{"#", "keybind"}, " ")
 	for _, k := range Keys {
-		where := map[string]string{"write": " (while writing)", "compose": " (Compose tab)", "lists": " (Queue, Drafts, Posted)", "x": " (X popup)"}[k.Where]
+		where := map[string]string{"write": " (while writing)", "compose": " (Compose tab)", "lists": " (Queue, Drafts, Posted)", "approve": " (approving an agent's post)", "x": " (X popup)"}[k.Where]
 		fmt.Fprintf(&b, "%s: Tmux/vaikhari | %s | %s%s\n", marker, k.Keys, k.Desc, where)
 	}
 	return b.String()

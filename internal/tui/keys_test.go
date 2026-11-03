@@ -26,7 +26,7 @@ func TestKeybindingsFile(t *testing.T) {
 
 // Every key reads verb-first, as the keybinding search wants.
 func TestKeysVerbFirst(t *testing.T) {
-	verbs := "confirm leave post schedule save toggle add start leave edit switch move open approve decline send cancel delete copy show quit"
+	verbs := "confirm leave post schedule save toggle add start leave edit switch move open approve decline send cancel delete copy show quit scroll"
 	for _, k := range Keys {
 		v := strings.ToLower(strings.Fields(k.Desc)[0])
 		if !strings.Contains(" "+verbs+" ", " "+v+" ") {

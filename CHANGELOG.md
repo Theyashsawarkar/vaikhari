@@ -2,6 +2,20 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## v0.3.0 -- 2026-11-03
+
+- **The approval screen as designed**, the same layout as narada's and
+  sangam's: networks, place in the queue and "nothing posts until you answer"
+  on top; one sentence, what you asked and what's at stake; each network's
+  facts (who it posts as, its length against the limit, where LinkedIn folds
+  it, X's thread, how it goes out, the image) beside the post exactly as it
+  goes, with LinkedIn's fold and X's thread breaks marked; the answers as a
+  row of keys. Narrow, the facts stack above the post.
+- New answers: `1` / `2` approve a post for LinkedIn or X only, `t` approves
+  it for another time, `p` previews it as each network shows it.
+- After you answer, the popup says what happened (approved, posted where,
+  what still waits for your click, or declined) before it closes.
+
 ## v0.2.2 -- 2026-11-03
 
 - The approval popup has the same frame as narada's and sangam's: a red rounded
