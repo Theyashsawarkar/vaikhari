@@ -737,6 +737,7 @@ func (m *Model) listKey(s string) tea.Cmd {
 			m.flash("Part of it is already out: o opens X, c cancels the rest.", true)
 			return nil
 		}
+		m.keep() // what you were writing stays, as a draft
 		m.load(p)
 		m.editing = true
 		return m.ed.Focus()

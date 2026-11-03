@@ -650,3 +650,75 @@ func TestSettingsFitsEveryWindow(t *testing.T) {
 		}
 	}
 }
+
+// An approval popup can open while you type elsewhere: no key answers it yet.
+func TestApproveIgnoresEveryKeyAtFirst(t *testing.T) {
+	a, f, _ := newApp(t)
+	p := agentPost(t, a, "From the agent", post.LinkedIn)
+	m := New(a, Options{Approve: p.ID})
+	size(m)
+	m.shownAt = time.Now()
+	for _, k := range []tea.KeyType{tea.KeyCtrlS, tea.KeyEnter} {
+		run(m, keyT(m, k))
+	}
+	if len(f.Posts()) != 0 || m.editing {
+		t.Fatalf("a key answered as the popup opened: posts %d, editing %v", len(f.Posts()), m.editing)
+	}
+}
+
+// An agent's note can't repaint the screen.
+func TestNoteEscapesAreDropped(t *testing.T) {
+	a, _, _ := newApp(t)
+	p := agentPost(t, a, "From the agent", post.LinkedIn)
+	p.Note = "fine\x1b[2J\x1b[Hfake approval"
+	a.Store.Save(p)
+	m := approver(a, p)
+	if v := m.View(); strings.Contains(v, "\x1b[2J") || strings.Contains(v, "\x1b[H") {
+		t.Fatal("the note's escapes reached the screen")
+	}
+}
+
+// Opening a draft from a list keeps what you were writing.
+func TestOpeningADraftKeepsYourText(t *testing.T) {
+	a, _, _ := newApp(t)
+	d := a.New()
+	d.Text = "an old draft"
+	a.SaveDraft(d)
+	m := New(a, Options{})
+	size(m)
+	typeText(m, "something new")
+	m.goTab(tabDrafts)
+	m.reload()
+	for i, p := range m.lists[tabDrafts] {
+		if p.Text == "an old draft" {
+			m.sel[tabDrafts] = i
+		}
+	}
+	keyT(m, tea.KeyEnter)
+	ds, _ := a.Store.List(post.Draft)
+	found := false
+	for _, p := range ds {
+		found = found || p.Text == "something new"
+	}
+	if !found || m.ed.Value() != "an old draft" {
+		t.Fatalf("lost: drafts %v, editor %q", ds, m.ed.Value())
+	}
+}
+
+// Two programs drawing in one kitty window can't share an image id.
+func TestPictureIDsDontRepeat(t *testing.T) {
+	pp := newPictures()
+	seen := map[int]bool{}
+	for range 600 {
+		id := pp.next
+		if seen[id] || id&0xff == 0 || id>>8 == 0 || id>>8 > 255 {
+			t.Fatalf("id %d", id)
+		}
+		seen[id] = true
+		if pp.next&0xff == 0xff {
+			pp.next = (pp.next>>8%255+1)<<8 | 1
+		} else {
+			pp.next++
+		}
+	}
+}

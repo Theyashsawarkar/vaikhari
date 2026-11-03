@@ -126,3 +126,27 @@ func TestCheckAndSettled(t *testing.T) {
 		t.Fatal("should be settled and failed")
 	}
 }
+
+// Numbered parts must still fit: " 1/2" can push a 278-character part over.
+func TestThreadPartsFitWithNumbers(t *testing.T) {
+	a := strings.Repeat("a", 278)
+	for _, p := range XParts(a + "\n---\nsecond") {
+		if XLength(p) > XLimit {
+			t.Fatalf("a part is %d", XLength(p))
+		}
+	}
+}
+
+func TestXStatusIDIsOnlyX(t *testing.T) {
+	for link, want := range map[string]string{
+		"https://x.com/a/status/123":            "123",
+		"https://twitter.com/a/status/123?s=20": "123",
+		" x.com/a/status/9 ":                    "9",
+		"https://netflix.com/u/status/123":      "",
+		"https://evil.com/?x.com/a/status/1":    "",
+	} {
+		if got := XStatusID(link); got != want {
+			t.Errorf("%q: %q, want %q", link, got, want)
+		}
+	}
+}

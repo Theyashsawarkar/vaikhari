@@ -14,6 +14,7 @@ let liOpen = false; // LinkedIn preview expanded past "…see more"
 let lost = false; // the server stopped answering
 let seenReady = null; // ids of the posts already waiting for X
 let busy = false; // a post is on its way: no second one
+const retrying = new Set(); // posts whose LinkedIn retry is on its way
 
 function blank() {
   return { id: 0, status: "draft", text: "", networks: S.accounts ? [...S.accounts.networks] : ["x", "linkedin"],
@@ -149,7 +150,21 @@ function renderSide() {
 
 // ---------------------------------------------------------------- compose
 
+// edits to a scheduled or failed post aren't saved as you type (that would take
+// it off the schedule): leaving them asks first
+function dirtyPost() {
+  return !C.approving && C.id && C.status !== "draft" && snapshot() !== C.saved;
+}
+function askLeave(then) {
+  if (!dirtyPost()) return then();
+  leaveNext = then;
+  modal(`<h3>Leave your edits to #${C.id}?</h3><p>They aren't saved: ${C.status === "scheduled" ? "Schedule" : "Post now"} saves them.</p>
+    <div class="row"><button class="ghost" data-act="close">Keep editing</button><button class="danger" data-act="leave-yes">Leave them</button></div>`);
+}
+let leaveNext = null;
+
 async function loadIntoEditor(p, approving) {
+  if (dirtyPost()) return askLeave(() => { C.saved = snapshot(); loadIntoEditor(p, approving); });
   await flush();
   C = { id: p.id, status: p.status, text: p.text, networks: [...(p.networks || [])],
     images: (p.images || []).map((path, i) => ({ path, url: p.image_urls[i] })), when: "",
@@ -172,6 +187,7 @@ function syncEditor() {
   const titles = { draft: C.id ? `Draft #${C.id}` : "New post", scheduled: `Scheduled #${C.id}`, failed: `#${C.id} (failed)` };
   $("#editor-title").textContent = C.approving ? `#${C.id}, written for you` : (titles[C.status] || "New post");
   $("#save-draft").hidden = !!C.approving;
+  $("label.tool").hidden = !!C.approving;
   // an agent's post can go to fewer networks than it asked for, not to more
   $$(".net").forEach((b) => { b.disabled = !!C.approving && !C.approving.networks.includes(b.dataset.net); });
   const b = $("#approve-banner");
@@ -399,6 +415,7 @@ async function schedule() {
   setBusy(true);
   try {
     const r = await api("POST", "/api/submit", body());
+    if (r.error || r.post.status !== "scheduled") { toast(r.error || `#${r.post.id} isn't scheduled`, true); refresh(true); setBusy(false); return; }
     toast(`Scheduled #${r.post.id}: goes out ${r.post.say}`);
     C = blank(); syncEditor(); refresh(true);
   } catch (e) { toast(e.message, true); }
@@ -409,9 +426,10 @@ async function postNow() {
   closeModal();
   if (busy) return;
   setBusy(true);
-  await settle();
+  await flush();
   try {
     const r = await api("POST", "/api/submit", body());
+    if (r.post.status === "draft") { toast(r.error || "It didn't go out", true); setBusy(false); refresh(true); return; }
     C = blank(); syncEditor();
     await afterPublish(r.post, r.error);
   } catch (e) { toast(e.message, true); }
@@ -616,7 +634,13 @@ async function act(name, id, el) {
         return modal(`<h3>Cancel #${id}?</h3><p>${esc(p.text.slice(0, 160))}${p.text.length > 160 ? "…" : ""}</p><p>It won't go out${p.status === "scheduled" ? "" : " anywhere else"}, and it can't be brought back.</p>
           <div class="row"><button class="ghost" data-act="close">Keep it</button><button class="danger" data-act="cancel-yes" data-id="${id}">Cancel the post</button></div>`);
       case "cancel-yes": closeModal(); await api("POST", `/api/posts/${id}/cancel`); toast(`Cancelled #${id}`); break;
-      case "retry": { const r = await api("POST", `/api/posts/${id}/retry`); toast("Posted on LinkedIn"); await afterPublish(r.post); break; }
+      case "retry": {
+        if (retrying.has(id)) return;
+        retrying.add(id); el.disabled = true;
+        try { const r = await api("POST", `/api/posts/${id}/retry`); toast("Posted on LinkedIn"); await afterPublish(r.post); }
+        finally { retrying.delete(id); }
+        break;
+      }
       case "xopen": return xFlow(p);
       case "delete":
         return modal(`<h3>Delete draft #${id}?</h3><p>${esc(p.text.slice(0, 160))}${p.text.length > 160 ? "…" : ""}</p>
@@ -639,6 +663,7 @@ async function act(name, id, el) {
       case "x-skip": closeModal(); await api("POST", `/api/posts/${id}/x-skip`); toast("Skipped X for this post"); break;
       case "post-now": return postNow();
       case "approve-now": return approveCurrent();
+      case "leave-yes": { closeModal(); const f = leaveNext; leaveNext = null; return f && f(); }
       case "x-paste": return xPasteLink();
       case "close": return closeModal();
       case "expand": return el.classList.toggle("open");
@@ -743,6 +768,7 @@ async function settingsSave() {
 // ---------------------------------------------------------------- images
 
 async function addImages(files) {
+  if (C.approving) return toast("An agent's post goes with its own images: decline it and write your own to change them", true);
   for (const f of files) {
     if (!f.type.startsWith("image/")) continue;
     const fd = new FormData();
@@ -800,7 +826,7 @@ $("#image-input").addEventListener("change", (e) => { addImages([...e.target.fil
 $("#when").addEventListener("input", whenChanged);
 $("#go").addEventListener("click", go);
 $("#save-draft").addEventListener("click", saveDraft);
-$("#new-post").addEventListener("click", async () => { await flush(); C = blank(); syncEditor(); $("#text").focus(); });
+$("#new-post").addEventListener("click", () => askLeave(async () => { await flush(); C = blank(); syncEditor(); $("#text").focus(); }));
 $("#add-break").addEventListener("click", () => {
   const t = $("#text"), at = t.selectionStart, end = t.selectionEnd;
   const before = t.value.slice(0, at), after = t.value.slice(end);
@@ -811,6 +837,7 @@ $("#add-break").addEventListener("click", () => {
   t.focus();
 });
 // closing the tab mid-sentence keeps what's typed
+window.addEventListener("beforeunload", (e) => { if (dirtyPost()) { e.preventDefault(); e.returnValue = ""; } });
 window.addEventListener("pagehide", () => {
   if (!unsaved()) return;
   const b = body();

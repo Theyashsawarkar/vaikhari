@@ -27,7 +27,7 @@ import (
 )
 
 // Version is vaikhari's version.
-const Version = "0.4.0"
+const Version = "0.4.1"
 
 // Paths are where vaikhari keeps things. VAIKHARI_HOME puts them all under
 // one folder (the demo, tests).
@@ -90,13 +90,26 @@ func SaveConfig(p Paths, c Config) error {
 	if err := os.MkdirAll(p.Config, 0o700); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(p.ConfigFile(), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	// A new file, renamed over the old: the secret never sits in a file
+	// someone else can read (one you wrote yourself may be 0644).
+	f, err := os.CreateTemp(p.Config, ".config-*.toml")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer os.Remove(f.Name())
+	if err := f.Chmod(0o600); err != nil {
+		f.Close()
+		return err
+	}
 	fmt.Fprintln(f, "# vaikhari's settings: https://github.com/Theyashsawarkar/vaikhari#configuration")
-	return toml.NewEncoder(f).Encode(c)
+	if err := toml.NewEncoder(f).Encode(c); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), p.ConfigFile())
 }
 
 // App is an open vaikhari.
@@ -113,10 +126,8 @@ type App struct {
 	// Notifier sends a desktop notification; with action, it waits for a
 	// click and says whether it came.
 	Notifier func(title, body, action string) bool
-	// QuietX leaves a due X post ready without a notification (the web
-	// screen shows it itself).
-	QuietX bool
-	mu     sync.Mutex // XLink swaps Opener for one call
+	mu       sync.Mutex // XLink swaps Opener for one call
+	retryMu  sync.Mutex // one Retry at a time
 	// ClipErr is why the last image for X didn't reach the clipboard.
 	ClipErr error
 }
@@ -371,7 +382,7 @@ func (a *App) Publish(ctx context.Context, p post.Post, interactive bool) (post.
 			if err := a.openX(&p); err != nil {
 				p.Set(post.X, post.Result{State: post.Error, Error: err.Error()})
 			}
-		} else if !a.QuietX {
+		} else {
 			a.notifyX(p)
 		}
 	}
@@ -527,8 +538,12 @@ func (a *App) CopyImage(p post.Post, n int) error {
 	return a.Clipboard(p.Images[n])
 }
 
-// Retry tries a failed LinkedIn post again.
+// Retry tries a failed LinkedIn post again. Two retries at once (a double
+// click, the screen and the page) must not post twice: one at a time here,
+// and the post is claimed in the store, as the schedule does, before sending.
 func (a *App) Retry(ctx context.Context, id int64) (post.Post, error) {
+	a.retryMu.Lock()
+	defer a.retryMu.Unlock()
 	p, err := a.Store.Get(id)
 	if err != nil {
 		return p, err
@@ -536,7 +551,12 @@ func (a *App) Retry(ctx context.Context, id int64) (post.Post, error) {
 	if p.State(post.LinkedIn) != post.Error {
 		return p, fmt.Errorf("#%d has nothing to retry", id)
 	}
+	// a LinkedIn error always leaves it failed (settle): failed → ready is the claim
 	p.Set(post.LinkedIn, post.Result{State: post.Pending})
+	p.Status = post.Ready
+	if ok, err := a.Store.Transition(p, post.Failed); err != nil || !ok {
+		return p, firstErr(err, fmt.Errorf("#%d is being sent already", id))
+	}
 	return a.Publish(ctx, p, false)
 }
 

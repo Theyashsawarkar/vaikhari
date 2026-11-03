@@ -2,6 +2,34 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## v0.4.1 -- 2026-11-04
+
+Fixes from an independent review of 0.4.0, each with a test:
+
+- **A post can't go out twice from Retry**: two retries at once (a double click, or
+  the screen and the page) posted to LinkedIn twice. A retry now claims the post first.
+- **No key answers an approval popup as it opens**: `Ctrl+S` and `Enter` could, if
+  you were typing elsewhere when it appeared. Now every key waits a moment.
+- **An agent's note can't repaint the screen**: escape sequences in it, or in a post's
+  text in the lists, are dropped.
+- **The browser screen keeps what you see**: a scheduled post whose change is refused
+  stays scheduled (it became a draft while the page said "Scheduled"); Post now saves
+  what you typed last and keeps it if nothing went out; an agent's post can't get
+  images it didn't have; leaving edits to a scheduled or failed post asks first.
+- **Approving a post with a refused edit changes nothing** (it used to keep the
+  networks or time you'd picked).
+- **Opening a post from a list keeps what you were writing**, as a draft.
+- **The LinkedIn secret is always private**: config.toml is written 0600, even when
+  you made it yourself first.
+- **A due X post notifies while `vaikhari web` runs**, as it does otherwise.
+- **The browser's settings don't overwrite newer ones**, and a new LinkedIn app there
+  ends the old sign-in.
+- **Images**: two screens in one kitty window no longer share image ids, and no
+  temporary picture is left behind.
+- **Settings**: `Tab` while editing a field goes to the next field.
+- **X**: numbered thread parts always fit in 280; only real x.com and twitter.com
+  links count as a post's link.
+
 ## v0.4.0 -- 2026-11-03
 
 - A logo and a shloka at the top of the README and the website: every Vayu tool has them now.

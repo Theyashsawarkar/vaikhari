@@ -40,7 +40,7 @@
 # keybind: Tmux/vaikhari | j / k | Move to the next / previous field (Settings tab)
 # keybind: Tmux/vaikhari | Enter | Edit the field (Enter finishes, Esc cancels it) (Settings tab)
 # keybind: Tmux/vaikhari | Ctrl+S | Save the settings (signs in to LinkedIn if it needs that) (Settings tab)
-# keybind: Tmux/vaikhari | Ctrl+L | Open LinkedIn's sign-in (Settings tab)
+# keybind: Tmux/vaikhari | Ctrl+L | Open LinkedIn's sign-in (saves your changes first) (Settings tab)
 # keybind: Tmux/vaikhari | Ctrl+O | Open LinkedIn's page for creating your app (Settings tab)
 # keybind: Tmux/vaikhari | Ctrl+Y | Copy the redirect URL for your LinkedIn app (Settings tab)
 # keybind: Tmux/vaikhari | Esc | Leave Settings for Compose (Settings tab)

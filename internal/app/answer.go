@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
@@ -33,6 +34,13 @@ func (a *App) ApproveAs(ctx context.Context, id int64, text *string, networks []
 		}
 		if sendAt != 0 {
 			p.SendAt = max(sendAt, 0)
+		}
+		if text != nil { // checked before anything is written: a refused answer changes nothing
+			check := p
+			check.Text = *text
+			if msg := post.Check(check); msg != "" {
+				return p, errors.New(msg)
+			}
 		}
 		ok, err := a.Store.Transition(p, post.Approval)
 		if err != nil || !ok {

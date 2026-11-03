@@ -185,8 +185,9 @@ in your default browser, at `http://127.0.0.1:8724` (`--port N` for another,
 - **Images**: pick them, paste them or drop them on the editor.
 - **A time you can't get wrong**: the button says what it will do, and stays
   off while the time field holds something that isn't a time ahead of now.
-- **Your writing is kept**: saved as a draft as you type, when you switch
-  posts, and when you close the tab.
+- **Your writing is kept**: a draft is saved as you type, when you switch
+  posts, and when you close the tab. Edits to a scheduled or failed post are
+  saved when you schedule or post it; leaving them asks first.
 - **Approving an agent's post**: what you see is what goes, the networks
   ticked and the time in the field. It can go to fewer networks than the agent
   asked for, never more.
@@ -197,7 +198,8 @@ in your default browser, at `http://127.0.0.1:8724` (`--port N` for another,
 
 It's only for you: it listens on 127.0.0.1, checks the Host header, and every
 API call needs a token that only the page it serves holds. It delivers
-scheduled posts while it runs, like the terminal screen.
+scheduled posts while it runs, like the terminal screen, with the same
+notification when an X post is due.
 
 ## Keys
 
@@ -271,7 +273,7 @@ scheduled posts while it runs, like the terminal screen.
 | `j / k` | Move to the next / previous field |
 | `Enter` | Edit the field (Enter finishes, Esc cancels it) |
 | `Ctrl+S` | Save the settings (signs in to LinkedIn if it needs that) |
-| `Ctrl+L` | Open LinkedIn's sign-in |
+| `Ctrl+L` | Open LinkedIn's sign-in (saves your changes first) |
 | `Ctrl+O` | Open LinkedIn's page for creating your app |
 | `Ctrl+Y` | Copy the redirect URL for your LinkedIn app |
 | `Esc` | Leave Settings for Compose |

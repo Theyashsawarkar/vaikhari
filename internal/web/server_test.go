@@ -246,3 +246,17 @@ func TestUploadChecksTheBytes(t *testing.T) {
 		t.Errorf("a PNG was refused: %d", code)
 	}
 }
+
+// A refused change to a scheduled post leaves it scheduled, not a draft.
+func TestRefusedEditStaysScheduled(t *testing.T) {
+	s, ts, _, a := setup(t)
+	p := a.New()
+	p.Text, p.Networks, p.SendAt = "later", []string{"linkedin"}, time.Now().Add(48*time.Hour).UnixMilli()
+	p, _ = a.Submit(context.Background(), p, false)
+	code, _ := call(t, s, ts, "POST", "/api/submit", map[string]any{"id": p.ID, "text": "later", "networks": []string{"linkedin"},
+		"images": []string{filepath.Join(t.TempDir(), "gone.png")}, "when": "tomorrow 9am"})
+	got, _ := a.Store.Get(p.ID)
+	if code == 200 || got.Status != post.Scheduled {
+		t.Fatalf("code %d, status %s", code, got.Status)
+	}
+}

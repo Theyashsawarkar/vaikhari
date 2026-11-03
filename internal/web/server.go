@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Theyashsawarkar/vaikhari/internal/app"
@@ -40,14 +41,14 @@ var static embed.FS
 type Server struct {
 	a     *app.App
 	token string
-	host  string // 127.0.0.1:port, for the Host check
+	host  string     // 127.0.0.1:port, for the Host check
+	cfgMu sync.Mutex // settings and setup change the config one at a time
 }
 
 // New makes the server for an open vaikhari.
 func New(a *app.App) *Server {
 	b := make([]byte, 24)
 	_, _ = rand.Read(b)
-	a.QuietX = true                                   // the page shows due X posts itself
 	linkedin.Open = func(string) error { return nil } // the page opens LinkedIn's sign-in
 	return &Server{a: a, token: hex.EncodeToString(b)}
 }
@@ -370,6 +371,19 @@ func (s *Server) fill(in postIn) (post.Post, error) {
 	return p, nil
 }
 
+// ready says why Submit would refuse the post, before anything changes.
+func ready(p post.Post) error {
+	imgs, err := app.ResolveImages(p.Images)
+	if err != nil {
+		return err
+	}
+	p.Images, p.Networks = imgs, post.Normalize(p.Networks)
+	if msg := post.Check(p); msg != "" {
+		return errors.New(msg)
+	}
+	return nil
+}
+
 // claim takes a scheduled post off the schedule before it's changed, so the
 // schedule can't publish it at the same moment.
 func (s *Server) claim(p post.Post) error {
@@ -412,6 +426,9 @@ func (s *Server) submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, err := s.fill(in)
+	if err == nil {
+		err = ready(p) // before the claim: a refused post stays as it was
+	}
 	if err == nil {
 		err = s.claim(p)
 	}
@@ -657,7 +674,13 @@ func (s *Server) settings(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	c := s.a.Config
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
+	c, err := app.LoadConfig(s.a.Paths) // the screen may have saved since this started
+	if err != nil {
+		fail(w, err)
+		return
+	}
 	c.X.Name, c.X.Handle = strings.TrimSpace(in.XName), strings.TrimPrefix(strings.TrimSpace(in.XHandle), "@")
 	if ns := post.Normalize(in.Networks); len(ns) > 0 {
 		c.Networks = ns
@@ -684,13 +707,23 @@ func (s *Server) setup(w http.ResponseWriter, r *http.Request) {
 		fail(w, errors.New("both the Client ID and the Client Secret are needed"))
 		return
 	}
-	c := s.a.Config
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
+	c, err := app.LoadConfig(s.a.Paths) // the screen may have saved since this started
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	changed := c.LinkedIn.ClientID != in.ID || c.LinkedIn.ClientSecret != in.Secret
 	c.LinkedIn.ClientID, c.LinkedIn.ClientSecret = in.ID, in.Secret
 	if err := app.SaveConfig(s.a.Paths, c); err != nil {
 		fail(w, err)
 		return
 	}
 	s.a.Config = c
+	if changed {
+		s.a.Tokens.Delete() // that sign-in was through the other app
+	}
 	writeJSON(w, s.accounts())
 }
 

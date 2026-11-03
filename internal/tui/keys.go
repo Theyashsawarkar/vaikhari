@@ -54,7 +54,7 @@ var Keys = []Key{
 	{"j / k", "Move to the next / previous field", "settings"},
 	{"Enter", "Edit the field (Enter finishes, Esc cancels it)", "settings"},
 	{"Ctrl+S", "Save the settings (signs in to LinkedIn if it needs that)", "settings"},
-	{"Ctrl+L", "Open LinkedIn's sign-in", "settings"},
+	{"Ctrl+L", "Open LinkedIn's sign-in (saves your changes first)", "settings"},
 	{"Ctrl+O", "Open LinkedIn's page for creating your app", "settings"},
 	{"Ctrl+Y", "Copy the redirect URL for your LinkedIn app", "settings"},
 	{"Esc", "Leave Settings for Compose", "settings"},

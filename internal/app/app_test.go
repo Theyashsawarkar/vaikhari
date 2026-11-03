@@ -256,3 +256,60 @@ func TestConfigRoundTrip(t *testing.T) {
 		t.Fatal(c2, err)
 	}
 }
+
+// Two retries at once (a double click; the screen and the page) post once.
+func TestRetryOnce(t *testing.T) {
+	a, f, _ := newApp(t, true)
+	f.FailPosts = 500
+	p := a.New()
+	p.Text, p.Networks = "retry me", []string{post.LinkedIn}
+	got, _ := a.Submit(context.Background(), p, false)
+	if got.Status != post.Failed {
+		t.Fatalf("status %s", got.Status)
+	}
+	f.FailPosts = 0
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Add(1)
+		go func() { defer wg.Done(); a.Retry(context.Background(), got.ID) }()
+	}
+	wg.Wait()
+	if n := len(f.Posts()); n != 1 {
+		t.Fatalf("%d LinkedIn posts", n)
+	}
+}
+
+// A refused answer (an edit over LinkedIn's limit) changes nothing stored.
+func TestApproveAsRefusedChangesNothing(t *testing.T) {
+	a, _, _ := newApp(t, true)
+	p := a.New()
+	p.Text, p.Networks, p.Origin = "from an agent", []string{post.X, post.LinkedIn}, post.Agent
+	got, _ := a.Submit(context.Background(), p, false)
+	long := strings.Repeat("word ", 700)
+	if _, err := a.ApproveAs(context.Background(), got.ID, &long, []string{post.LinkedIn}, time.Now().Add(time.Hour).UnixMilli(), false); err == nil {
+		t.Fatal("an edit over the limit was approved")
+	}
+	after, _ := a.Store.Get(got.ID)
+	if after.Status != post.Approval || len(after.Networks) != 2 || after.SendAt != 0 {
+		t.Fatalf("the refused answer was written: %+v", after)
+	}
+}
+
+// The secret never sits in a file others can read, even one you wrote.
+func TestSaveConfigIsPrivate(t *testing.T) {
+	a, _, _ := newApp(t, true)
+	os.MkdirAll(a.Paths.Config, 0o755)
+	os.WriteFile(a.Paths.ConfigFile(), []byte("networks = [\"x\"]\n"), 0o644)
+	c := a.Config
+	c.LinkedIn.ClientSecret = "secret"
+	if err := SaveConfig(a.Paths, c); err != nil {
+		t.Fatal(err)
+	}
+	fi, _ := os.Stat(a.Paths.ConfigFile())
+	if fi.Mode().Perm() != 0o600 {
+		t.Fatalf("mode %v", fi.Mode().Perm())
+	}
+	if got, _ := LoadConfig(a.Paths); got.LinkedIn.ClientSecret != "secret" {
+		t.Fatal("not saved")
+	}
+}

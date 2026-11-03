@@ -128,9 +128,13 @@ func (m *Model) settingsKey(k tea.KeyMsg) (tea.Cmd, bool) {
 		case "ctrl+s":
 			f.stopEdit(true)
 			return m.saveSettings(), true
-		case "tab", "shift+tab":
+		case "tab", "shift+tab": // the next field, as in any form: nothing is lost
 			f.stopEdit(true)
-			return nil, false
+			if s == "tab" {
+				f.setFocus(f.focus + 1)
+			} else {
+				f.setFocus(f.focus - 1)
+			}
 		default:
 			var cmd tea.Cmd
 			f.in[f.focus], cmd = f.in[f.focus].Update(k)
@@ -355,4 +359,15 @@ func (m *Model) settingsView() []string {
 			st.Muted.Render("Ṛgveda 1.164.45 · vaikhari "+app.Version))
 	}
 	return strings.Split(st.Box(m.w, m.bodyHeight(), "Settings", lines, true, ""), "\n")
+}
+
+// clean drops control characters from text an agent or a network wrote: an
+// escape sequence in it could repaint the screen around what you approve.
+func clean(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\t' || (r >= 0x20 && r != 0x7f && !(r >= 0x80 && r < 0xa0)) {
+			return r
+		}
+		return -1
+	}, s)
 }

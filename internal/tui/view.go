@@ -171,7 +171,7 @@ func (m *Model) approveTop(p post.Post) []string {
 	where := strings.Join(nets, " and ")
 	lines := []string{" " + st.Bold.Render(who+" wants to post ") + st.Red.Bold(true).Render("publicly, as you") + st.Bold.Render(", on "+where)}
 	if p.Note != "" {
-		lines = append(lines, " "+st.Muted.Render("You asked: ")+st.Sub.Render("“"+strings.TrimRight(ui.Fit(p.Note, max(10, m.w-16)), " ")+"”"))
+		lines = append(lines, " "+st.Muted.Render("You asked: ")+st.Sub.Render("“"+strings.TrimRight(ui.Fit(clean(p.Note), max(10, m.w-16)), " ")+"”"))
 	}
 	chips := []string{st.Pill("public", st.T.Red)}
 	if m.ed.Value() != m.cur.Text {
@@ -270,7 +270,7 @@ func (m *Model) settingsLines(p post.Post) []string {
 		whenS = m.st.Blue.Render(when.Say(time.UnixMilli(p.SendAt), m.a.Now()))
 	}
 	if m.approving && m.cur.Note != "" {
-		whenS += m.st.Muted.Render("   why: ") + m.st.Sub.Render(m.cur.Note)
+		whenS += m.st.Muted.Render("   why: ") + m.st.Sub.Render(clean(m.cur.Note))
 	}
 	imgs := m.st.Muted.Render("none · Ctrl+O adds one")
 	if len(p.Images) > 0 {
@@ -471,7 +471,7 @@ func (m *Model) listView() []string {
 	var rows [][]string
 	for _, p := range l {
 		rows = append(rows, []string{m.st.Muted.Render(fmt.Sprint(p.ID)), m.whenOf(p), m.st.Sub.Render(networks(p)), m.stateOf(p),
-			m.st.Text.Render(strings.Join(strings.Fields(p.Text), " "))})
+			m.st.Text.Render(strings.Join(strings.Fields(clean(p.Text)), " "))})
 	}
 	sel := m.sel[m.tab]
 	inner := tableH - 2
@@ -565,7 +565,7 @@ func (m *Model) detail(p post.Post, w, h int) []string {
 	}
 	var lines []string
 	if p.Note != "" {
-		lines = append(lines, m.st.Peach.Render("Why: ")+m.st.Sub.Render(p.Note), "")
+		lines = append(lines, m.st.Peach.Render("Why: ")+m.st.Sub.Render(clean(p.Note)), "")
 	}
 	text := ui.Wrap(strings.TrimSpace(p.Text), w)
 	room := h - len(lines) - len(p.Networks) - 1
@@ -624,7 +624,7 @@ func (m *Model) approvalDetail(p post.Post, w, h int) []string {
 	head += m.st.Muted.Render(" · "+at) + "  " + badge
 	lines := []string{head}
 	if p.Note != "" {
-		lines = append(lines, m.st.Peach.Render("▍")+m.st.Sub.Italic(true).Render(" “"+p.Note+"”"))
+		lines = append(lines, m.st.Peach.Render("▍")+m.st.Sub.Italic(true).Render(" “"+clean(p.Note)+"”"))
 	}
 	lines = append(lines, "")
 	room := max(4, h-len(lines)-1)

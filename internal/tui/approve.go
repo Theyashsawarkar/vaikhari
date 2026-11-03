@@ -41,7 +41,7 @@ const (
 func (m *Model) approveKey(s string) tea.Cmd {
 	// A popup can open while you're typing elsewhere: what you were
 	// typing can't answer it.
-	if (s == "y" || s == "n" || s == "1" || s == "2") && time.Since(m.shownAt) < armAfter {
+	if time.Since(m.shownAt) < armAfter { // every key: Ctrl+S approves too, Enter edits
 		return nil
 	}
 	p := m.editorPost()
@@ -271,7 +271,7 @@ func (m *Model) approveHead(p post.Post, w int) []string {
 	lines := []string{top, ""}
 	lines = append(lines, wrapStyled(st.Bold.Render(who+" wants to post ")+st.Red.Bold(true).Render("publicly, as you")+st.Bold.Render(", "+where), w)...)
 	if p.Note != "" {
-		lines = append(lines, wrapStyled(st.Muted.Render("You asked: ")+st.Sub.Render("“"+p.Note+"”"), w)...)
+		lines = append(lines, wrapStyled(st.Muted.Render("You asked: ")+st.Sub.Render("“"+clean(p.Note)+"”"), w)...)
 	}
 	chips := []string{st.Pill("public", st.T.Red)}
 	if m.ed.Value() != m.cur.Text {

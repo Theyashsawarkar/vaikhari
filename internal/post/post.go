@@ -209,6 +209,16 @@ func XParts(text string) []string {
 	if len(chunks) <= 1 {
 		return chunks
 	}
+	// numbered, each part needs room for " 3/4": a part that fit alone may not
+	var fit []string
+	for _, c := range chunks {
+		if XLength(c) > XLimit-6 {
+			fit = append(fit, splitLong(c, XLimit-6)...)
+		} else {
+			fit = append(fit, c)
+		}
+	}
+	chunks = fit
 	n := len(chunks)
 	for i := range chunks {
 		chunks[i] = chunks[i] + " " + itoa(i+1) + "/" + itoa(n)
@@ -301,11 +311,11 @@ func XIntent(text, replyTo string) string {
 	return "https://x.com/intent/post?" + q.Encode()
 }
 
-var reStatus = regexp.MustCompile(`(?:x|twitter)\.com/[^/\s]+/status(?:es)?/(\d+)`)
+var reStatus = regexp.MustCompile(`^(?:https?://)?(?:www\.|mobile\.)?(?:x|twitter)\.com/[^/\s]+/status(?:es)?/(\d+)(?:[/?#]|$)`)
 
 // XStatusID is the post id in an X link ("" when it isn't one).
 func XStatusID(link string) string {
-	if m := reStatus.FindStringSubmatch(link); m != nil {
+	if m := reStatus.FindStringSubmatch(strings.TrimSpace(link)); m != nil {
 		return m[1]
 	}
 	return ""
