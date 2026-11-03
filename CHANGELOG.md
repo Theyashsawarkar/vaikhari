@@ -2,6 +2,11 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## v0.2.2 -- 2026-11-03
+
+- The approval popup has the same frame as narada's and sangam's: a red rounded
+  border titled "vaikhari · approve a post", red because a post is public.
+
 ## v0.2.1 -- 2026-11-02
 
 - **A new approval screen**: one sentence says who wants to post, publicly and

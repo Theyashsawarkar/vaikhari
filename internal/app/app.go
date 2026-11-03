@@ -26,7 +26,7 @@ import (
 )
 
 // Version is vaikhari's version.
-const Version = "0.2.1"
+const Version = "0.2.2"
 
 // Paths are where vaikhari keeps things. VAIKHARI_HOME puts them all under
 // one folder (the demo, tests).
@@ -562,7 +562,7 @@ func (a *App) AskApproval(p post.Post) {
 	if os.Getenv("TMUX") == "" {
 		return
 	}
-	args := []string{"display-popup", "-E", "-w", "86%", "-h", "84%", "-T", " vaikhari: approve post ",
+	args := []string{"display-popup", "-E", "-w", "86%", "-h", "84%", "-b", "rounded", "-S", "fg=red", "-T", "#[fg=red] vaikhari · approve a post ",
 		fmt.Sprintf("%s approve %d", shellQuote(Executable()), p.ID)}
 	if pane := os.Getenv("TMUX_PANE"); pane != "" {
 		args = append(args[:1], append([]string{"-t", pane}, args[1:]...)...)
