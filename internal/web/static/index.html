@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="vaikhari-token" content="{{TOKEN}}">
+<title>vaikhari</title>
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img src="/static/logo.svg" alt="" width="34" height="34">
+      <div><b>vaikhari</b><span>वैखरी</span></div>
+    </div>
+    <nav>
+      <button data-view="compose" class="on"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Compose</button>
+      <button data-view="queue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Queue<i id="n-queue"></i></button>
+      <button data-view="drafts"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Drafts<i id="n-drafts"></i></button>
+      <button data-view="posted"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Posted<i id="n-posted"></i></button>
+    </nav>
+    <div class="grow"></div>
+    <figure class="shloka" title="Speech has four measures. Three lie hidden and do not stir; the fourth is what people speak.">
+      <p lang="sa">चत्वारि वाक् परिमिता पदानि<br>तानि विदुर्ब्राह्मणा ये मनीषिणः ।<br>गुहा त्रीणि निहिता नेङ्गयन्ति<br>तुरीयं वाचो मनुष्या वदन्ति ॥</p>
+      <figcaption>Ṛgveda 1.164.45</figcaption>
+    </figure>
+    <div class="accounts" id="accounts"></div>
+    <button class="settings-btn" id="open-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+  </aside>
+
+  <main>
+    <section id="view-compose" class="view on">
+      <div class="banner" id="approve-banner" hidden></div>
+      <div class="compose">
+        <div class="editor card">
+          <div class="editor-head">
+            <h2 id="editor-title">New post</h2>
+            <button class="ghost small" id="new-post" title="Start a new post">New</button>
+          </div>
+          <textarea id="text" placeholder="What do you want to say?" spellcheck="true" aria-label="Your post"></textarea>
+          <p class="hint">A line with only <code>---</code> starts the next post of an X thread; LinkedIn gets one post.</p>
+          <div class="thumbs" id="thumbs"></div>
+          <div class="toolbar">
+            <div class="nets">
+              <button class="net" data-net="x" title="Post to X"><svg class="logo" viewBox="0 0 24 24"><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.2l7.7-8.8L2 2h6.8l4.7 6.2zm-1.1 18h1.7L7.2 3.9H5.4z"/></svg>X</button>
+              <button class="net" data-net="linkedin" title="Post to LinkedIn"><svg class="logo" viewBox="0 0 24 24"><path d="M20.4 2H3.6A1.6 1.6 0 0 0 2 3.6v16.8A1.6 1.6 0 0 0 3.6 22h16.8a1.6 1.6 0 0 0 1.6-1.6V3.6A1.6 1.6 0 0 0 20.4 2zM8 19H5V9.5h3zM6.5 8.2a1.7 1.7 0 1 1 0-3.5 1.7 1.7 0 0 1 0 3.5zM19 19h-3v-4.6c0-1.1 0-2.5-1.5-2.5S12.8 13 12.8 14.3V19h-3V9.5h2.8v1.3a3.1 3.1 0 0 1 2.8-1.5c3 0 3.6 2 3.6 4.6z"/></svg>LinkedIn</button>
+            </div>
+            <label class="tool" title="Add an image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L5 21"/></svg>Image<input type="file" id="image-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden></label>
+            <button class="tool" id="add-break" title="Start the next post of an X thread here"><svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M8 6h8M8 18h8"/></svg>Thread</button>
+            <div class="when">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <input id="when" placeholder="Post now, or: fri 6pm" autocomplete="off" list="when-ideas" aria-label="When to post">
+              <datalist id="when-ideas"><option value="tomorrow 9am"><option value="tomorrow 6pm"><option value="mon 9am"><option value="fri 6pm"><option value="in 1h"></datalist>
+            </div>
+          </div>
+          <p id="when-say" role="status"></p>
+          <div class="actions">
+            <span class="saved" id="saved" role="status"></span>
+            <button class="ghost" id="save-draft" title="Ctrl+S">Save draft</button>
+            <button class="primary" id="go" title="Ctrl+Enter"><span id="go-label">Post now</span><svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></button>
+          </div>
+        </div>
+
+        <div class="previews">
+          <div class="pv-head"><svg class="logo" viewBox="0 0 24 24"><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.2l7.7-8.8L2 2h6.8l4.7 6.2zm-1.1 18h1.7L7.2 3.9H5.4z"/></svg>On X <span id="x-meta"></span></div>
+          <div class="pv pv-x" id="pv-x"></div>
+          <div class="pv-head"><svg class="logo li" viewBox="0 0 24 24"><path d="M20.4 2H3.6A1.6 1.6 0 0 0 2 3.6v16.8A1.6 1.6 0 0 0 3.6 22h16.8a1.6 1.6 0 0 0 1.6-1.6V3.6A1.6 1.6 0 0 0 20.4 2zM8 19H5V9.5h3zM6.5 8.2a1.7 1.7 0 1 1 0-3.5 1.7 1.7 0 0 1 0 3.5zM19 19h-3v-4.6c0-1.1 0-2.5-1.5-2.5S12.8 13 12.8 14.3V19h-3V9.5h2.8v1.3a3.1 3.1 0 0 1 2.8-1.5c3 0 3.6 2 3.6 4.6z"/></svg>On LinkedIn <span id="li-meta"></span></div>
+          <div class="pv pv-li" id="pv-li"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-list" class="view">
+      <header class="list-head"><h2 id="list-title"></h2><p id="list-sub"></p></header>
+      <div class="list" id="list"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-bg" id="modal-bg" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

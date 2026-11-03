@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -26,7 +27,7 @@ import (
 )
 
 // Version is vaikhari's version.
-const Version = "0.3.0"
+const Version = "0.4.0"
 
 // Paths are where vaikhari keeps things. VAIKHARI_HOME puts them all under
 // one folder (the demo, tests).
@@ -112,6 +113,12 @@ type App struct {
 	// Notifier sends a desktop notification; with action, it waits for a
 	// click and says whether it came.
 	Notifier func(title, body, action string) bool
+	// QuietX leaves a due X post ready without a notification (the web
+	// screen shows it itself).
+	QuietX bool
+	mu     sync.Mutex // XLink swaps Opener for one call
+	// ClipErr is why the last image for X didn't reach the clipboard.
+	ClipErr error
 }
 
 // Open opens vaikhari's config and posts.
@@ -364,7 +371,7 @@ func (a *App) Publish(ctx context.Context, p post.Post, interactive bool) (post.
 			if err := a.openX(&p); err != nil {
 				p.Set(post.X, post.Result{State: post.Error, Error: err.Error()})
 			}
-		} else {
+		} else if !a.QuietX {
 			a.notifyX(p)
 		}
 	}
@@ -434,6 +441,22 @@ func (a *App) OpenX(id int64) (post.Post, error) {
 	return p, a.Store.Save(p)
 }
 
+// XLink is OpenX for a page that opens X itself (the web screen): the
+// share page's URL for the next part, the post marked open, nothing
+// launched here.
+func (a *App) XLink(id int64) (post.Post, string, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var link string
+	opener := a.Opener
+	clip := a.Clipboard
+	a.Opener = func(u string) error { link = u; return nil }
+	a.Clipboard = nil // the page copies the image itself
+	p, err := a.OpenX(id)
+	a.Opener, a.Clipboard = opener, clip
+	return p, link, err
+}
+
 func (a *App) openX(p *post.Post) error {
 	parts := XParts(*p)
 	r := p.Results[post.X]
@@ -445,7 +468,7 @@ func (a *App) openX(p *post.Post) error {
 		reply = post.XStatusID(r.Links[r.Part-1])
 	}
 	if r.Part == 0 && len(p.Images) > 0 && a.Clipboard != nil {
-		_ = a.Clipboard(p.Images[0]) // best effort: the page can't take images
+		a.ClipErr = a.Clipboard(p.Images[0]) // X's page can't take images: you paste it
 	}
 	if err := a.Opener(post.XIntent(parts[r.Part], reply)); err != nil {
 		return fmt.Errorf("couldn't open the browser: %w", err)

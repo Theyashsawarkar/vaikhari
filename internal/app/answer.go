@@ -8,9 +8,10 @@ import (
 )
 
 // ApproveAs is Approve with the answer changed first: only some of the
-// networks it asked for (none: all of them), or another time (0: as asked).
+// networks it asked for (none: all of them), or another time (0: as asked,
+// below 0: now).
 func (a *App) ApproveAs(ctx context.Context, id int64, text *string, networks []string, sendAt int64, interactive bool) (post.Post, error) {
-	if len(networks) > 0 || sendAt > 0 {
+	if len(networks) > 0 || sendAt != 0 {
 		p, err := a.Store.Get(id)
 		if err != nil {
 			return p, err
@@ -30,8 +31,8 @@ func (a *App) ApproveAs(ctx context.Context, id int64, text *string, networks []
 			}
 			p.Networks = keep
 		}
-		if sendAt > 0 {
-			p.SendAt = sendAt
+		if sendAt != 0 {
+			p.SendAt = max(sendAt, 0)
 		}
 		ok, err := a.Store.Transition(p, post.Approval)
 		if err != nil || !ok {

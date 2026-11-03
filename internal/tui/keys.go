@@ -25,8 +25,8 @@ var Keys = []Key{
 	{"Esc", "Leave the editor (the other keys work then)", "write"},
 	{"i / Enter", "Edit the post", "compose"},
 	{"Tab / Shift+Tab", "Switch to the next / previous tab", ""},
-	{"1 – 4", "Switch to Compose, Queue, Drafts or Posted", ""},
-	{"L", "Open LinkedIn's sign-in again (it lasts 60 days)", ""},
+	{"1 – 5", "Switch to Compose, Queue, Drafts, Posted or Settings (not while writing)", ""},
+	{"L", "Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up)", ""},
 	{"?", "Show every key", ""},
 	{"q", "Quit", ""},
 	{"j / k", "Move to the next / previous post", "lists"},
@@ -46,14 +46,30 @@ var Keys = []Key{
 	{"2", "Approve it for X only (when it asks for both)", "approve"},
 	{"t", "Schedule it: approve it for another time", "approve"},
 	{"e", "Edit it first (Ctrl+S approves your version, Esc comes back)", "approve"},
-	{"p", "Show it as each network shows it, then exactly again", "approve"},
+	{"Tab / Shift+Tab", "Switch to the next / previous capsule: the post, each network, each image", "approve"},
+	{"o", "Open the image full size", "approve"},
 	{"j / k", "Scroll the post when it's longer than its frame", "approve"},
 	{"n", "Decline it (nothing is posted, the agent is told)", "approve"},
 	{"q / Esc", "Leave it for later (it waits in Queue)", "approve"},
+	{"j / k", "Move to the next / previous field", "settings"},
+	{"Enter", "Edit the field (Enter finishes, Esc cancels it)", "settings"},
+	{"Ctrl+S", "Save the settings (signs in to LinkedIn if it needs that)", "settings"},
+	{"Ctrl+L", "Open LinkedIn's sign-in", "settings"},
+	{"Ctrl+O", "Open LinkedIn's page for creating your app", "settings"},
+	{"Ctrl+Y", "Copy the redirect URL for your LinkedIn app", "settings"},
+	{"Esc", "Leave Settings for Compose", "settings"},
 	{"Enter", "Confirm it's posted on X (paste its link first for a thread's next part)", "x"},
 	{"Ctrl+O", "Open X's page again", "x"},
+	{"Ctrl+Y", "Copy the image to your clipboard again", "x"},
 	{"Ctrl+K", "Cancel X for this post (LinkedIn is unaffected)", "x"},
 	{"Esc", "Leave it for later (it waits in Queue)", "x"},
+}
+
+// WebKeys are the keys of `vaikhari web`'s page, for the keybinding search.
+var WebKeys = []Key{
+	{"Ctrl+Enter", "Post it now, or schedule it when it has a time", "web"},
+	{"Ctrl+S", "Save it as a draft", "web"},
+	{"Esc", "Leave the open window", "web"},
 }
 
 // KeybindingsFile is scripts/keybindings, for Vayu's keybinding search.
@@ -65,8 +81,8 @@ func KeybindingsFile() string {
 	// marker is kept apart from the rest of the line: the binary holds this
 	// format string, and the keybinding search scans plugins' bin/ folders.
 	marker := strings.Join([]string{"#", "keybind"}, " ")
-	for _, k := range Keys {
-		where := map[string]string{"write": " (while writing)", "compose": " (Compose tab)", "lists": " (Queue, Drafts, Posted)", "approve": " (approving an agent's post)", "x": " (X popup)"}[k.Where]
+	for _, k := range append(append([]Key{}, Keys...), WebKeys...) {
+		where := map[string]string{"web": " (vaikhari web)", "write": " (while writing)", "compose": " (Compose tab)", "lists": " (Queue, Drafts, Posted)", "approve": " (approving an agent's post)", "x": " (X popup)", "settings": " (Settings tab)"}[k.Where]
 		fmt.Fprintf(&b, "%s: Tmux/vaikhari | %s | %s%s\n", marker, k.Keys, k.Desc, where)
 	}
 	return b.String()

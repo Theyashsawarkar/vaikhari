@@ -25,6 +25,8 @@ func (m *Model) View() string {
 	switch {
 	case m.approving || m.tab == tabCompose:
 		body = m.composeView()
+	case m.tab == tabSettings:
+		body = m.settingsView()
 	default:
 		body = m.listView()
 	}
@@ -68,12 +70,16 @@ func (m *Model) header() string {
 		}
 		tabs[i] = t
 	}
-	return m.st.Tabs(tabs, m.tab, "", m.w-lipgloss.Width(m.accounts())-1) + m.accounts() + " "
+	accounts := m.accounts()
+	if m.w < 110 { // every tab must show: who's signed in is in Settings
+		return m.st.Tabs(tabs, m.tab, "", m.w)
+	}
+	return m.st.Tabs(tabs, m.tab, "", m.w-lipgloss.Width(accounts)-1) + accounts + " "
 }
 
 // accounts is the top right: who LinkedIn posts as, and X's one click.
 func (m *Model) accounts() string {
-	li := m.st.Red.Render("✗ LinkedIn") + m.st.Muted.Render(" (L signs in)")
+	li := m.st.Red.Render("✗ LinkedIn") + m.st.Muted.Render(" (see Settings)")
 	if m.liErr == nil {
 		days := int(m.li.Left(m.a.Now()).Hours() / 24)
 		li = m.st.Green.Render("✓ ") + m.st.Text.Render(m.li.Name)
@@ -116,7 +122,11 @@ func (m *Model) footer() string {
 		mode, keys = "APPROVE", [][2]string{{"y", m.postLabel()}, {"e", "Edit first"}, {"n", "Decline"}, {"q", "Decide later"}}
 	case m.editing:
 		mode, keys = "WRITE", [][2]string{{"^S", "post"}, {"^T", "schedule"}, {"^D", "draft"}, {"^X", "X"}, {"^L", "LinkedIn"},
-			{"^O", "image"}, {"^N", "new"}, {"Esc", "more keys"}}
+			{"^O", "image"}, {"^N", "new"}, {"Tab", "next tab"}, {"Esc", "more keys"}}
+	case m.tab == tabSettings && m.form != nil && m.form.editing:
+		mode, keys = "EDITING", [][2]string{{"Enter", "done"}, {"Esc", "cancel this field"}, {"^S", "save"}}
+	case m.tab == tabSettings:
+		mode, keys = "SETTINGS", [][2]string{{"j/k", "move"}, {"Enter", "edit"}, {"^S", "save"}, {"^L", "sign in"}, {"^O", "LinkedIn's page"}, {"^Y", "copy URL"}, {"Tab", "next tab"}, {"Esc", "Compose"}}
 	case m.tab == tabCompose:
 		mode, keys = "COMPOSE", [][2]string{{"i", "write"}, {"^S", "post"}, {"^T", "schedule"}, {"Tab", "queue"}, {"?", "keys"}, {"q", "quit"}}
 	case m.tab == tabQueue:
@@ -323,7 +333,8 @@ func (m *Model) xPreview(p post.Post, text string, w, h int) []string {
 		}
 	}
 	if len(p.Images) > 0 {
-		lines = append(lines, "", m.st.Peach.Render("▣ image: on your clipboard when X opens, paste it"))
+		lines = append(lines, m.previewImage(p, w, h-len(lines)-4)...)
+		lines = append(lines, "", m.st.Peach.Render("▣ on your clipboard when X opens: paste it"))
 	}
 	label := fmt.Sprintf("%d/280", longest)
 	if len(parts) > 1 {
@@ -359,7 +370,10 @@ func (m *Model) linkedInPreview(p post.Post, text string, w, h int) []string {
 		lines = append(lines, m.st.Text.Render(l))
 	}
 	if n := len(p.Images); n > 0 {
-		lines = append(lines, "", m.st.Blue.Render(fmt.Sprintf("▣ %d image%s", n, map[bool]string{true: "s", false: ""}[n != 1])))
+		lines = append(lines, m.previewImage(p, w, h-len(lines)-2)...)
+		if drawn := n == 1 && len(lines) > 0 && m.lastWasImage; !drawn {
+			lines = append(lines, "", m.st.Blue.Render(fmt.Sprintf("▣ %d image%s", n, map[bool]string{true: "s", false: ""}[n != 1])))
+		}
 	}
 	n := post.LinkedInLength(t)
 	label := fmt.Sprintf("%s/3,000", comma(n))
@@ -367,6 +381,21 @@ func (m *Model) linkedInPreview(p post.Post, text string, w, h int) []string {
 		label += " · folds after ~210"
 	}
 	return pinBottom(lines, h, m.meter(n, post.LinkedInLimit, w, label))
+}
+
+// previewImage is a post's first image, where it sits in the post, when
+// there are at least 4 rows for it.
+func (m *Model) previewImage(p post.Post, w, room int) []string {
+	m.lastWasImage = false
+	if room = min(room, previewImageRows); room < 4 {
+		return nil
+	}
+	img := m.pics.lines(p.Images[0], min(w-2, previewImageRows*4), room)
+	if img == nil {
+		return nil
+	}
+	m.lastWasImage = true
+	return append([]string{""}, img...)
 }
 
 // linkedInFold is what LinkedIn's feed shows of its text before
@@ -633,20 +662,30 @@ func (m *Model) xwaitBox() []string {
 		m.st.Text.Render("X is open in your browser with the post filled in."),
 		m.st.Text.Render("Press ") + m.st.Bold.Render("Post") + m.st.Text.Render(" there, then come back and press Enter."),
 	}
+	keys := []string{m.st.Key("Enter", "posted"), m.st.Key("^O", "open X again")}
+	if p, err := m.a.Store.Get(x.id); err == nil && len(p.Images) > 0 && x.part == 0 {
+		if m.a.ClipErr != nil {
+			lines = append(lines, "", m.st.Red.Render("Couldn't copy the image: "+m.a.ClipErr.Error()))
+		} else {
+			lines = append(lines, "", m.st.Peach.Render("▣ The image is on your clipboard: paste it on X with Ctrl+V."))
+		}
+		keys = append(keys, m.st.Key("^Y", "copy image again"))
+	}
+	keys = append(keys, m.st.Key("^K", "skip X"), m.st.Key("Esc", "later"))
 	if x.parts > 1 && x.part+1 < x.parts {
 		lines = append(lines, "", m.st.Sub.Render("Paste the post's link (Share → Copy link) so the next part replies to it:"))
 	} else {
 		lines = append(lines, "", m.st.Sub.Render("Its link, if you want it kept (optional):"))
 	}
-	lines = append(lines, x.in.View(), "",
-		m.st.Key("Enter", "posted")+"  "+m.st.Key("^O", "open X again")+"  "+m.st.Key("^K", "skip X")+"  "+m.st.Key("Esc", "later"))
+	lines = append(lines, x.in.View(), "")
+	lines = append(lines, flow(keys, min(m.w-4, 78)-6)...)
 	return m.st.Popup(title, lines, min(m.w-4, 78), m.st.T.Sky)
 }
 
 func (m *Model) helpLines() []string {
 	var out []string
 	where := ""
-	heads := map[string]string{"write": "While writing", "compose": "Compose", "": "Everywhere", "lists": "Queue, Drafts, Posted", "approve": "Approving an agent's post", "x": "While X waits for your click"}
+	heads := map[string]string{"write": "While writing", "compose": "Compose", "": "Everywhere", "lists": "Queue, Drafts, Posted", "approve": "Approving an agent's post", "x": "While X waits for your click", "settings": "Settings"}
 	for _, k := range Keys {
 		if k.Where != where || len(out) == 0 {
 			where = k.Where

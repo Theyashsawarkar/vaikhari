@@ -363,7 +363,7 @@ func escapeLittle(s string) string {
 
 // Check says what's wrong with a post for its networks ("" when nothing).
 func Check(p Post) string {
-	if strings.TrimSpace(p.Text) == "" {
+	if len(splitBreaks(p.Text)) == 0 { // nothing, or only "---" lines
 		return "the post is empty"
 	}
 	if len(p.Networks) == 0 {

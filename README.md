@@ -1,5 +1,18 @@
 # vaikhari
 
+<!-- identity -->
+<p align="center">
+  <img alt="vaikhari logo" src="assets/logo.svg" width="120">
+</p>
+
+<p align="center">
+  <b>चत्वारि वाक् परिमिता पदानि तानि विदुर्ब्राह्मणा ये मनीषिणः ।<br>
+  गुहा त्रीणि निहिता नेङ्गयन्ति तुरीयं वाचो मनुष्या वदन्ति ॥</b><br>
+  <i>Speech has four measures. Three lie hidden and do not stir; the fourth is what people speak.</i><br>
+  <sub>Ṛgveda 1.164.45</sub>
+</p>
+<!-- /identity -->
+
 **Write once, post to X and LinkedIn from the terminal.** One editor with a
 live preview of how each network will show your post, drafts, a schedule,
 and an AI agent that can draft posts for you (you approve every one).
@@ -14,7 +27,8 @@ one click.
 </p>
 <p align="center"><sub>Screenshots use <code>vaikhari demo</code>: a made-up account.</sub></p>
 
-> *Vaikhari* (वैखरी) is Sanskrit for "spreading out, broadcast".
+> *Vaikhari* (वैखरी) is Sanskrit for speech spoken aloud: the last of speech's
+> four stages, the one other people hear.
 
 ## Contents
 
@@ -23,6 +37,7 @@ one click.
 - [Set up LinkedIn](#set-up-linkedin)
 - [Posting to X: one click](#posting-to-x-one-click)
 - [The screen](#the-screen)
+- [In your browser](#in-your-browser)
 - [Keys](#keys)
 - [From the shell](#from-the-shell)
 - [The schedule](#the-schedule)
@@ -97,11 +112,13 @@ LinkedIn in a throwaway folder (nothing is posted, X isn't opened).
 vaikhari posts to LinkedIn through an app of your own: free, self-serve, about
 two minutes, once ([ADR 4](docs/adr/0004-linkedin-through-your-own-app.md)).
 
-```sh
-vaikhari auth linkedin --setup
-```
+Open vaikhari's **Settings** tab (`Tab` until you're there, or `5`). It has the
+steps, opens the pages and copies the redirect URL for you, and takes the Client
+ID and Client Secret right there: `Enter` edits a field, `Ctrl+S` saves and signs
+you in. It's read-only until you do, so stray typing changes nothing. From a shell,
+`vaikhari auth linkedin --setup` does the same.
 
-It walks you through it:
+The steps:
 
 1. At [linkedin.com/developers/apps/new](https://www.linkedin.com/developers/apps/new)
    create an app: any name, a LinkedIn page as its company (LinkedIn needs
@@ -148,9 +165,39 @@ you: at its time a notification offers to open it.
   post.
 - **Drafts**: posts you kept; `e` edits one, `p` posts it, `t` schedules it.
 - **Posted**: what went out, with its links; `v` opens one, `y` copies it.
+- **Settings**: LinkedIn's app and sign-in, and your name and handle for X's
+  preview.
+
+`Tab` and `Shift+Tab` go through the tabs from anywhere, even while you write:
+what you wrote stays.
 
 The top right says who LinkedIn posts as (and days left) and that X is one
 click. Tabs count what's in Queue and Drafts.
+
+## In your browser
+
+`vaikhari web` opens the same posts, drafts, schedule and approvals as a page
+in your default browser, at `http://127.0.0.1:8724` (`--port N` for another,
+`--no-open` to only print the address, `--demo` for the fake LinkedIn).
+
+- **Previews that look like the real thing**, with X's thread and LinkedIn's
+  "see more" fold where they'll fall.
+- **Images**: pick them, paste them or drop them on the editor.
+- **A time you can't get wrong**: the button says what it will do, and stays
+  off while the time field holds something that isn't a time ahead of now.
+- **Your writing is kept**: saved as a draft as you type, when you switch
+  posts, and when you close the tab.
+- **Approving an agent's post**: what you see is what goes, the networks
+  ticked and the time in the field. It can go to fewer networks than the agent
+  asked for, never more.
+- **Threads on X**: paste each part's link when you come back and the next
+  part replies to it. Skip the link and you're told first that the thread
+  will come apart.
+- **Keys**: `Ctrl+Enter` posts, `Ctrl+S` saves a draft, `Esc` closes a window.
+
+It's only for you: it listens on 127.0.0.1, checks the Host header, and every
+API call needs a token that only the page it serves holds. It delivers
+scheduled posts while it runs, like the terminal screen.
 
 ## Keys
 
@@ -180,8 +227,8 @@ click. Tabs count what's in Queue and Drafts.
 | Key | Action |
 |---|---|
 | `Tab / Shift+Tab` | Switch to the next / previous tab |
-| `1 – 4` | Switch to Compose, Queue, Drafts or Posted |
-| `L` | Open LinkedIn's sign-in again (it lasts 60 days) |
+| `1 – 5` | Switch to Compose, Queue, Drafts, Posted or Settings (not while writing) |
+| `L` | Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up) |
 | `?` | Show every key |
 | `q` | Quit |
 
@@ -211,7 +258,8 @@ click. Tabs count what's in Queue and Drafts.
 | `2` | Approve it for X only (when it asks for both) |
 | `t` | Schedule it: approve it for another time |
 | `e` | Edit it first (Ctrl+S approves your version, Esc comes back) |
-| `p` | Show it as each network shows it, then exactly again |
+| `Tab / Shift+Tab` | Switch to the next / previous capsule: the post, each network, each image |
+| `o` | Open the image full size |
 | `j / k` | Scroll the post when it's longer than its frame |
 | `n` | Decline it (nothing is posted, the agent is told) |
 | `q / Esc` | Leave it for later (it waits in Queue) |
@@ -220,8 +268,16 @@ click. Tabs count what's in Queue and Drafts.
 
 | Key | Action |
 |---|---|
+| `j / k` | Move to the next / previous field |
+| `Enter` | Edit the field (Enter finishes, Esc cancels it) |
+| `Ctrl+S` | Save the settings (signs in to LinkedIn if it needs that) |
+| `Ctrl+L` | Open LinkedIn's sign-in |
+| `Ctrl+O` | Open LinkedIn's page for creating your app |
+| `Ctrl+Y` | Copy the redirect URL for your LinkedIn app |
+| `Esc` | Leave Settings for Compose |
 | `Enter` | Confirm it's posted on X (paste its link first for a thread's next part) |
 | `Ctrl+O` | Open X's page again |
+| `Ctrl+Y` | Copy the image to your clipboard again |
 | `Ctrl+K` | Cancel X for this post (LinkedIn is unaffected) |
 | `Esc` | Leave it for later (it waits in Queue) |
 
@@ -252,6 +308,7 @@ vaikhari approve [ID]                              # an agent's post (the oldest
 | `vaikhari daemon` | The same, in the foreground |
 | `vaikhari mcp [--requester NAME]` | The MCP server for agents (stdio) |
 | `vaikhari doctor` | Check the setup: LinkedIn, clipboard, notifications, the service |
+| `vaikhari web [--port N] [--no-open] [--demo]` | The same in your browser |
 | `vaikhari demo` | Try it with a fake LinkedIn |
 | `vaikhari keybindings` | The keys, for Vayu's keybinding search |
 | `vaikhari --version` | The version |
@@ -294,8 +351,11 @@ you, on 2 networks"), then what you asked and labels for what's at stake
 (public, images, now or when). Beside the post, exactly as it goes (with
 where LinkedIn folds it and where X's thread breaks marked), each network's
 facts: who it posts as, its length against the limit, where LinkedIn's "see
-more" cuts it, X's thread, how it goes out. `p` shows it as each network
-will; `1` / `2` approve it for one network, `t` for another time. After you
+more" cuts it, X's thread, how it goes out. Above the post, capsules (`Tab`,
+`Shift+Tab`) switch between the post, each network's preview and each image,
+sharp in kitty (even in a tmux popup; other terminals get colour half-blocks),
+and `o` opens the image full size. `1` / `2` approve it for one network, `t`
+for another time. After you
 answer, the popup says what happened and closes. Narrow, the facts stack
 above the post.
 

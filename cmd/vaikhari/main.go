@@ -28,6 +28,7 @@ import (
 	"github.com/Theyashsawarkar/vaikhari/internal/mcpserver"
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
 	"github.com/Theyashsawarkar/vaikhari/internal/tui"
+	"github.com/Theyashsawarkar/vaikhari/internal/web"
 	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
@@ -48,6 +49,8 @@ const usage = `vaikhari: write once, post to X and LinkedIn.
   vaikhari daemon                  the same, in the foreground
   vaikhari mcp [--requester NAME]  MCP server for AI agents (stdio)
   vaikhari doctor                  check the setup
+  vaikhari web [--port N] [--no-open] [--demo]
+                                 the same in your browser (http://127.0.0.1:8724)
   vaikhari demo                    try it with a fake LinkedIn (nothing real is posted)
   vaikhari --popup KEY             run inside a tmux popup: KEY closes it too
   vaikhari --version
@@ -88,6 +91,8 @@ func main() {
 		err = withApp(doctor)
 	case "demo":
 		err = demo()
+	case "web":
+		err = webCmd(args)
 	case "keybindings": // scripts/keybindings, for Vayu's keybinding search
 		fmt.Print(tui.KeybindingsFile())
 	case "help":
@@ -131,7 +136,10 @@ func screen(args []string) error {
 }
 
 func run(a *app.App, opt tui.Options) error {
-	_, err := tea.NewProgram(tui.New(a, opt), tea.WithAltScreen()).Run()
+	opt.Graphics = true
+	m := tui.New(a, opt)
+	defer m.Close()
+	_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
 	return err
 }
 
@@ -495,24 +503,74 @@ func doctor(a *app.App) error {
 	return nil
 }
 
-// demo is vaikhari with a fake LinkedIn, in a throwaway folder: nothing
-// real is posted, and X's page isn't opened.
-func demo() error {
-	dir, err := os.MkdirTemp("", "vaikhari-demo-")
+func webCmd(args []string) error {
+	fs := flag.NewFlagSet("web", flag.ExitOnError)
+	port := fs.Int("port", 8724, "")
+	noOpen := fs.Bool("no-open", false, "")
+	isDemo := fs.Bool("demo", false, "")
+	fs.Usage = func() { fmt.Print(usage) }
+	_ = fs.Parse(args)
+	var a *app.App
+	var err error
+	if *isDemo {
+		var done func()
+		a, done, err = demoApp()
+		if err != nil {
+			return err
+		}
+		defer done()
+	} else {
+		if a, err = app.Open(app.DefaultPaths()); err != nil {
+			return err
+		}
+		defer a.Close()
+	}
+	s := web.New(a)
+	ln, u, err := s.Listen(*port)
+	if err != nil && *port != 0 {
+		ln, u, err = s.Listen(0) // that port is taken: any free one
+	}
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
+	fmt.Println("vaikhari is open at", u, "(Ctrl+C stops it)")
+	if !*noOpen {
+		_ = exec.Command("xdg-open", u).Start()
+	}
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	return s.Serve(ctx, ln)
+}
+
+// demo is vaikhari with a fake LinkedIn, in a throwaway folder: nothing
+// real is posted, and X's page isn't opened.
+func demo() error {
+	a, done, err := demoApp()
+	if err != nil {
+		return err
+	}
+	defer done()
+	return run(a, tui.Options{})
+}
+
+// demoApp is vaikhari on a fake LinkedIn in a throwaway folder, with a few
+// posts; done() removes it all.
+func demoApp() (*app.App, func(), error) {
+	dir, err := os.MkdirTemp("", "vaikhari-demo-")
+	if err != nil {
+		return nil, nil, err
+	}
 	f := fake.New()
-	defer f.Close()
 	os.Setenv("VAIKHARI_HOME", dir)
 	os.Setenv("VAIKHARI_LINKEDIN_URL", f.URL)
 	os.Setenv("VAIKHARI_NO_KEYRING", "1")
 	a, err := app.Open(app.DefaultPaths())
 	if err != nil {
-		return err
+		f.Close()
+		os.RemoveAll(dir)
+		return nil, nil, err
 	}
-	defer a.Close()
+	done := func() { a.Close(); f.Close(); os.RemoveAll(dir) }
 	a.Opener = func(string) error { return nil }
 	a.Clipboard = func(string) error { return nil }
 	a.Notifier = func(string, string, string) bool { return false }
@@ -520,7 +578,7 @@ func demo() error {
 	_ = a.Tokens.Save(linkedin.Token{Access: "fake-token", Sub: "fake-member", Name: "Asha Demo",
 		Expires: time.Now().Add(52 * 24 * time.Hour).Unix()})
 	seed(a)
-	return run(a, tui.Options{})
+	return a, done, nil
 }
 
 func seed(a *app.App) {

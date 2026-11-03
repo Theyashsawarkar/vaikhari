@@ -86,6 +86,9 @@ func (s *server) check(_ context.Context, _ *mcp.CallToolRequest, in checkIn) (*
 func Describe(t string) string {
 	var b strings.Builder
 	parts := post.XParts(t)
+	if len(parts) == 0 {
+		return "The post is empty.\n"
+	}
 	if len(parts) <= 1 {
 		fmt.Fprintf(&b, "X: %d/%d characters, one post.\n", post.XLength(t), post.XLimit)
 	} else {

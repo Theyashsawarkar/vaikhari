@@ -2,6 +2,34 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## v0.4.0 -- 2026-11-03
+
+- A logo and a shloka at the top of the README and the website: every Vayu tool has them now.
+- **`vaikhari web`: the same posts in your browser.** Everything the screen
+  does, with previews that look like X's and LinkedIn's own: writing, threads,
+  images (pick, paste or drop them), the schedule, the Queue, approvals, X's
+  one click, settings and LinkedIn's sign-in. It listens on 127.0.0.1 only and
+  every call needs a token that only its page holds. Works on a phone-sized
+  window too.
+- **Settings tab**: set up LinkedIn inside the screen, with the steps beside the
+  fields, and your name and handle for X's preview. Signing in stays in the
+  screen too, without dropping to a terminal prompt. It's read-only until you
+  press `Enter` on a field, and changing the app of a working sign-in asks first.
+- **`Tab` no longer gets stuck in the editor**: `Tab` and `Shift+Tab` switch tabs
+  while you write, and what you wrote stays.
+- **Signing in again asks first** when your sign-in is still good, so a stray key
+  opens no browser tab.
+- **Capsules on the approval screen**: `Tab` and `Shift+Tab` switch the frame
+  between the post, each network's preview and each image (these replace `p`);
+  `o` opens the image full size.
+- **Images you can see**: previews draw a post's image where it will sit. In
+  kitty it's the real image, even inside a tmux popup; other terminals get
+  colour half-blocks. WebP images aren't drawn: `o` opens them.
+- **X says what happened to your image**: its window says the image is on your
+  clipboard, or why it couldn't be copied, and `Ctrl+Y` copies it again.
+- A post of nothing but `---` lines now counts as empty, everywhere.
+- `ApproveAs` takes a time below 0 to mean "now".
+
 ## v0.3.0 -- 2026-11-03
 
 - **The approval screen as designed**, the same layout as narada's and

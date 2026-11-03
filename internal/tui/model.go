@@ -30,6 +30,7 @@ import (
 type Options struct {
 	PopupKey string // the tmux key that opened the popup: closes it too
 	Approve  int64  // open on this agent's post, to approve it
+	Graphics bool   // draw images through the terminal's own protocol, when it has one
 }
 
 const (
@@ -37,9 +38,10 @@ const (
 	tabQueue
 	tabDrafts
 	tabPosted
+	tabSettings
 )
 
-var tabNames = []string{"Compose", "Queue", "Drafts", "Posted"}
+var tabNames = []string{"Compose", "Queue", "Drafts", "Posted", "Settings"}
 
 // Model is the screen.
 type Model struct {
@@ -56,9 +58,9 @@ type Model struct {
 	cur     post.Post // the post in the editor (ID 0: not saved yet)
 	saved   string    // its text when last saved, to know if it changed
 
-	lists [4][]post.Post
-	sel   [4]int
-	top   [4]int
+	lists [5][]post.Post
+	sel   [5]int
+	top   [5]int
 	stamp string
 
 	li    linkedin.Token
@@ -78,9 +80,16 @@ type Model struct {
 	approving bool // opened by `vaikhari approve`
 	shownAt   time.Time
 	quitAfter bool // quit once the X step is done (approve popup)
-	view      int  // what the post frame shows (p): exactly, or a network's preview
+	view      int  // what the post frame shows (Tab): exactly, a network's preview, or an image
 	scroll    int  // the post frame's scroll
 	result    *answered
+	pics      *pictures
+	form      *settingsForm
+	verseOut  bool // the verse's picture is on disk
+	// authCancel stops waiting for LinkedIn's sign-in
+	authCancel func()
+	// lastWasImage: previewImage drew the image, so no line need say it's there
+	lastWasImage bool
 }
 
 type prompt struct {
@@ -113,7 +122,10 @@ type authMsg struct{ err error }
 
 // New makes the screen.
 func New(a *app.App, opt Options) *Model {
-	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("vaikhari")), themeT: ui.ThemeStamp()}
+	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("vaikhari")), themeT: ui.ThemeStamp(), pics: newPictures()}
+	if opt.Graphics {
+		m.pics.detectGraphics()
+	}
 	m.ed = textarea.New()
 	m.ed.Placeholder = "What do you want to say? (a line with --- starts the next post of an X thread)"
 	m.ed.ShowLineNumbers = false
@@ -233,8 +245,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case publishedMsg:
 		return m, m.published(msg)
 	case authMsg:
+		m.busy, m.authCancel = "", nil
 		m.loadLinkedIn()
-		if msg.err != nil {
+		if errors.Is(msg.err, context.Canceled) {
+			m.flash("Stopped waiting for LinkedIn's sign-in.", false)
+		} else if msg.err != nil {
 			m.flash("LinkedIn: "+msg.err.Error(), true)
 		} else if m.liErr == nil {
 			m.flash("Signed in to LinkedIn as "+m.li.Name, false)
@@ -291,10 +306,18 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 		m.flash("Nothing done.", false)
 		return nil
 	case m.busy != "":
+		if s == "esc" && m.authCancel != nil {
+			m.authCancel()
+		}
 		return nil
 	}
 	if m.editing {
 		return m.editKey(k)
+	}
+	if m.tab == tabSettings && !m.approving {
+		if cmd, done := m.settingsKey(k); done {
+			return cmd
+		}
 	}
 	if m.approving {
 		if m.result != nil {
@@ -315,16 +338,16 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 		m.help = true
 		return nil
 	case "tab":
-		m.tab = (m.tab + 1) % len(tabNames)
+		m.goTab((m.tab + 1) % len(tabNames))
 		return nil
 	case "shift+tab":
-		m.tab = (m.tab + len(tabNames) - 1) % len(tabNames)
+		m.goTab((m.tab + len(tabNames) - 1) % len(tabNames))
 		return nil
-	case "1", "2", "3", "4":
-		m.tab = int(s[0] - '1')
+	case "1", "2", "3", "4", "5":
+		m.goTab(int(s[0] - '1'))
 		return nil
 	case "L":
-		return m.signIn()
+		return m.askSignIn()
 	}
 	if m.tab == tabCompose {
 		switch s {
@@ -362,6 +385,15 @@ func (m *Model) editKey(k tea.KeyMsg) tea.Cmd {
 		m.editing = false
 		m.ed.Blur()
 		return nil
+	case "tab", "shift+tab": // writing doesn't trap you: what you wrote stays
+		if !m.approving {
+			step := 1
+			if k.String() == "shift+tab" {
+				step = len(tabNames) - 1
+			}
+			m.goTab((m.tab + step) % len(tabNames))
+			return nil
+		}
 	}
 	if m.approving && k.String() == "ctrl+s" {
 		m.editing = false
@@ -604,6 +636,15 @@ func (m *Model) xwaitKey(k tea.KeyMsg) tea.Cmd {
 			m.flash(err.Error(), true)
 		}
 		return nil
+	case "ctrl+y":
+		if p, err := m.a.Store.Get(w.id); err != nil || len(p.Images) == 0 {
+			return nil
+		} else if err := m.a.CopyImage(p, 0); err != nil {
+			m.flash("Couldn't copy the image: "+err.Error(), true)
+		} else {
+			m.flash("The image is on your clipboard: paste it on X.", false)
+		}
+		return nil
 	case "enter":
 		link := strings.TrimSpace(w.in.Value())
 		if link != "" && post.XStatusID(link) == "" {
@@ -823,10 +864,6 @@ func (m *Model) approveID(id int64, text *string) tea.Cmd {
 		got, err := a.Approve(context.Background(), id, text, true)
 		return publishedMsg{p: got, err: err, action: "approve"}
 	}
-}
-
-func (m *Model) signIn() tea.Cmd {
-	return tea.ExecProcess(exec.Command(app.Executable(), "auth", "linkedin"), func(err error) tea.Msg { return authMsg{err} })
 }
 
 // copyText puts text on the clipboard.

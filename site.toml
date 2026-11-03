@@ -6,3 +6,6 @@ tagline = "Write once, post to X and LinkedIn from the terminal: a live preview 
 color = "peach"
 kind = "posting"
 logo = "assets/logo.svg"
+shloka = "चत्वारि वाक् परिमिता पदानि तानि विदुर्ब्राह्मणा ये मनीषिणः ।\nगुहा त्रीणि निहिता नेङ्गयन्ति तुरीयं वाचो मनुष्या वदन्ति ॥"
+shloka_meaning = "Speech has four measures. Three lie hidden and do not stir; the fourth is what people speak."
+shloka_source = "Ṛgveda 1.164.45"

@@ -30,11 +30,12 @@ type answered struct {
 	bad              bool
 }
 
-// Previews the post frame cycles through with p.
+// What the post frame shows: its capsules, cycled with Tab.
 const (
 	viewExact = iota
 	viewLinkedIn
 	viewX
+	viewImage // then one for each image: viewImage+i
 )
 
 func (m *Model) approveKey(s string) tea.Cmd {
@@ -70,10 +71,27 @@ func (m *Model) approveKey(s string) tea.Cmd {
 	case "e", "i", "enter":
 		m.editing = true
 		return m.ed.Focus()
-	case "p":
+	case "tab", "shift+tab":
 		views := m.views(p)
-		m.view = views[(slices.Index(views, m.view)+1)%len(views)]
+		step := 1
+		if s == "shift+tab" {
+			step = len(views) - 1
+		}
+		i := slices.Index(views, m.view)
+		if i < 0 {
+			i = 0
+		}
+		m.view = views[(i+step)%len(views)]
 		m.scroll = 0
+	case "o":
+		if i := m.view - viewImage; i >= 0 && i < len(p.Images) {
+			if err := m.a.Opener(p.Images[i]); err != nil {
+				m.flash(err.Error(), true)
+			}
+		} else if len(p.Images) > 0 {
+			m.view = viewImage
+			m.scroll = 0
+		}
 	case "j", "down":
 		m.scroll++
 	case "k", "up":
@@ -86,8 +104,8 @@ func (m *Model) approveKey(s string) tea.Cmd {
 	return nil
 }
 
-// views is what p cycles through: the post exactly, then each network's
-// preview.
+// views is what Tab cycles through: the post exactly, each network's
+// preview, then each image.
 func (m *Model) views(p post.Post) []int {
 	v := []int{viewExact}
 	if p.On(post.LinkedIn) {
@@ -95,6 +113,9 @@ func (m *Model) views(p post.Post) []int {
 	}
 	if p.On(post.X) {
 		v = append(v, viewX)
+	}
+	for i := range p.Images {
+		v = append(v, viewImage+i)
 	}
 	return v
 }
@@ -256,9 +277,6 @@ func (m *Model) approveHead(p post.Post, w int) []string {
 	if m.ed.Value() != m.cur.Text {
 		chips = append(chips, st.Pill("edited by you: y posts your version", st.T.Yellow))
 	}
-	if n := len(p.Images); n > 0 {
-		chips = append(chips, st.Chip(count(n, "image"), st.T.Sub))
-	}
 	if p.SendAt > 0 {
 		chips = append(chips, st.Chip("goes "+when.Say(time.UnixMilli(p.SendAt), m.a.Now()), st.T.Blue))
 	} else {
@@ -344,6 +362,9 @@ func (m *Model) approveFacts(p post.Post, w int) []string {
 				k = "File"
 			}
 			kv(k, st.Text.Render(filepath.Base(img))+size)
+			if iw, ih, _, ok := imageSize(img); ok {
+				kv("Size", st.Text.Render(fmt.Sprintf("%d × %d", iw, ih)))
+			}
 		}
 	}
 	return out
@@ -365,7 +386,7 @@ func (m *Model) approveMiddle(p post.Post, w, room int) []string {
 			facts = facts[:keep]
 		}
 	}
-	frame := m.postFrame(p, frameW, frameH)
+	frame := append([]string{m.capsules(p, frameW)}, m.postFrame(p, frameW, frameH-1)...)
 	if !two {
 		return append(append(facts, ""), frame...)
 	}
@@ -380,24 +401,64 @@ func (m *Model) approveMiddle(p post.Post, w, room int) []string {
 	return out
 }
 
+// capsules are what the frame can show, the current one lit.
+func (m *Model) capsules(p post.Post, w int) string {
+	st := m.st
+	var row []string
+	for _, v := range m.views(p) {
+		name := ""
+		switch {
+		case v == viewExact:
+			name = "The post"
+		case v == viewLinkedIn:
+			name = "LinkedIn"
+		case v == viewX:
+			name = "X"
+		case len(p.Images) > 1:
+			name = fmt.Sprintf("▣ Image %d", v-viewImage+1)
+		default:
+			name = "▣ Image"
+		}
+		if v == m.view {
+			row = append(row, st.Pill(name, st.T.Accent))
+		} else {
+			row = append(row, st.Chip(name, st.T.Sub))
+		}
+	}
+	line := strings.Join(row, " ")
+	if hint := "Tab / Shift+Tab"; lipgloss.Width(line)+len(hint)+2 <= w {
+		return ui.Row(line, st.Muted.Render(hint), w)
+	}
+	return ansi.Truncate(line, w, "…")
+}
+
 // postFrame is the post in a frame: exactly as it goes, with LinkedIn's
-// fold and X's thread breaks marked, or as one network shows it (p).
+// fold and X's thread breaks marked, as one network shows it, or an image.
 func (m *Model) postFrame(p post.Post, w, h int) []string {
 	iw := max(4, w-4)
 	var body []string
 	title := "the post, exactly"
+	inside := max(1, h-2)
+	image := m.view - viewImage
+	if image >= len(p.Images) { // it had an image, and doesn't now
+		m.view, image = viewExact, -1
+	}
 	switch m.view {
 	case viewLinkedIn:
 		title, body = "as LinkedIn shows it", unpad(m.linkedInPreview(p, p.Text, iw, 1000))
 	case viewX:
 		title, body = "as X shows it", unpad(m.xPreview(p, p.Text, iw, 1000))
-	default:
+	case viewExact:
 		if m.ed.Value() != m.cur.Text {
 			title = "the post, with your edit"
 		}
 		body = m.exactLines(p, iw)
+	default:
+		title = fmt.Sprintf("%s · %d of %d", filepath.Base(p.Images[image]), image+1, len(p.Images))
+		if body = m.pics.lines(p.Images[image], iw, inside); body == nil {
+			body = []string{m.st.Muted.Render("This image can't be drawn here: o opens it.")}
+		}
 	}
-	inside := max(1, h-2)
 	scroll := min(m.scroll, max(0, len(body)-inside))
 	m.scroll = scroll
 	shown := body[scroll:min(len(body), scroll+inside)]
@@ -405,15 +466,8 @@ func (m *Model) postFrame(p post.Post, w, h int) []string {
 	if len(body) > inside {
 		note = append(note, fmt.Sprintf("%d–%d of %d · j/k", scroll+1, scroll+len(shown), len(body)))
 	}
-	switch views := m.views(p); {
-	case len(views) > 2:
-		note = append(note, "p previews each network")
-	case m.view == viewExact && p.On(post.X):
-		note = append(note, "p: as X shows it")
-	case m.view == viewExact:
-		note = append(note, "p: as LinkedIn shows it")
-	default:
-		note = append(note, "p: exactly")
+	if image >= 0 {
+		note = append(note, "o opens it full size")
 	}
 	return frameBox(m.st, shown, title, strings.Join(note, " · "), w, h)
 }
@@ -563,13 +617,6 @@ func unpad(l []string) []string {
 }
 
 func wrapStyled(s string, w int) []string { return strings.Split(ansi.Wrap(s, max(1, w), ""), "\n") }
-
-func count(n int, one string) string {
-	if n == 1 {
-		return "1 " + one
-	}
-	return fmt.Sprintf("%d %ss", n, one)
-}
 
 func firstNonEmpty(vs ...string) string {
 	for _, v := range vs {
