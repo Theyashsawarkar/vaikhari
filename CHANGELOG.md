@@ -2,6 +2,10 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
+## Unreleased
+
+- Every corner is rounded: the website's callouts.
+
 ## v0.4.1 -- 2026-11-04
 
 Fixes from an independent review of 0.4.0, each with a test:
