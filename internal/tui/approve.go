@@ -7,6 +7,8 @@ package tui
 // says it's public.
 
 import (
+	"github.com/Theyashsawarkar/vyakarana/popup"
+
 	"context"
 	"fmt"
 	"os"
@@ -20,8 +22,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
-	"github.com/Theyashsawarkar/vaikhari/internal/ui"
 	"github.com/Theyashsawarkar/vaikhari/internal/when"
+	"github.com/Theyashsawarkar/vyakarana/ui"
 )
 
 // answered is what happened, shown a moment before the popup closes.
@@ -99,7 +101,7 @@ func (m *Model) approveKey(s string) tea.Cmd {
 	case "q", "esc":
 		return tea.Quit
 	case "?":
-		m.help = true
+		m.help, m.sheet = true, popup.Help{}
 	}
 	return nil
 }
@@ -161,10 +163,10 @@ func (m *Model) answered(r answered) tea.Cmd {
 // approvedResult is what an approval did, network by network.
 func (m *Model) approvedResult(p post.Post, err error) answered {
 	if err != nil {
-		return answered{title: "✗ It didn't all go out", sub: err.Error(), tiny: "it waits in vaikhari's Queue: r retries", bad: true}
+		return answered{title: "✗ It didn't all go out", sub: err.Error(), tiny: "it waits in vaikhari's Queue: Space p r retries", bad: true}
 	}
 	if p.Status == post.Scheduled {
-		return answered{title: "✓ Approved", sub: "It goes out " + when.Say(time.UnixMilli(p.SendAt), m.a.Now()) + ".", tiny: "c in vaikhari's Queue cancels it"}
+		return answered{title: "✓ Approved", sub: "It goes out " + when.Say(time.UnixMilli(p.SendAt), m.a.Now()) + ".", tiny: "dd in vaikhari's Queue cancels it"}
 	}
 	var done, wait []string
 	for _, n := range p.Networks {

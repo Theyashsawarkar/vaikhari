@@ -131,7 +131,7 @@ The steps:
 
 Then your browser opens on LinkedIn's sign-in. LinkedIn's sign-in lasts
 **60 days** and can't be renewed silently: the screen's top right shows the
-days left, turning yellow in the last week, and `L` (or `vaikhari auth
+days left, turning yellow in the last week, and `Space , l` (or `vaikhari auth
 linkedin`) signs in again.
 
 vaikhari posts to your personal profile. Company pages need LinkedIn's
@@ -148,7 +148,7 @@ out:
 3. Back in vaikhari, press `Enter`. Paste the post's link first if you want
    it kept; for a thread, the link makes the next part a reply to it.
 
-`Esc` leaves it for later (it waits in Queue, `o` opens it again);
+`Esc` leaves it for later (it waits in Queue, `Space p x` opens it again);
 `Ctrl+K` skips X for that post. A scheduled X post can't go out without
 you: at its time a notification offers to open it.
 
@@ -163,13 +163,13 @@ you: at its time a notification offers to open it.
   to click, a LinkedIn post that failed) and the schedule, soonest first,
   with the selected post in full below. The footer shows the keys for that
   post.
-- **Drafts**: posts you kept; `e` edits one, `p` posts it, `t` schedules it.
-- **Posted**: what went out, with its links; `v` opens one, `y` copies it.
+- **Drafts**: posts you kept; `e` edits one, `Space p p` posts it, `Space p t` schedules it.
+- **Posted**: what went out, with its links; `o` opens one, `y` copies it.
 - **Settings**: LinkedIn's app and sign-in, and your name and handle for X's
   preview.
 
-`Tab` and `Shift+Tab` go through the tabs from anywhere, even while you write:
-what you wrote stays.
+`Tab` and `Shift+Tab` go through the tabs from anywhere, even while you write
+(`H` / `L` too, outside the editor): what you wrote stays.
 
 The top right says who LinkedIn posts as (and days left) and that X is one
 click. Tabs count what's in Queue and Drafts.
@@ -203,85 +203,136 @@ notification when an X post is due.
 
 ## Keys
 
-`?` in the screen shows them all.
+vaikhari uses the vim grammar every Vayu tool shares
+([vyakarana](https://github.com/Theyashsawarkar/vyakarana)): Compose opens
+in INSERT, in the editor, where the Ctrl keys work as before; `Esc` goes to
+NORMAL, where keys are commands and typing changes nothing. Coming back
+to Compose you're in the mode you left it in (`Tab` while writing writes
+again; `H` / `L` from NORMAL stay in NORMAL). `Space` is the
+leader: press it and a box lists what can follow (`Space p` posts,
+schedules, saves or sends again; `Space n` picks the networks; `Space a`
+adds an image or a new post; `Space t` switches tabs; `Space ,` settings
+and LinkedIn's sign-in). `H` / `L` switch tabs (`Tab` and `1`–`5` too).
+`Space Space` searches every action, `?` shows every key. Deleting or
+cancelling asks first, and only `y` says yes.
 
-**While writing**
+Keys that moved say where they went for one release: in the lists `p` →
+`Space p p`, `t` → `Space p t`, `c` → `dd`, `v` → `o`. `o` now opens the
+post's link (X's page is `Space p x`), `r` reloads (sending again is
+`Space p r`), `L` is the next tab (LinkedIn's sign-in is `Space , l`).
 
-| Key | Action |
+<!-- keys: generated from the keymap; run the tests with -update -->
+**Everywhere**
+
+| Keys | What it does |
 |---|---|
-| `Ctrl+S` | Post it now (LinkedIn goes out, X opens in your browser; asks first) |
-| `Ctrl+T` | Schedule it (tomorrow 9am, fri 6pm, in 2h...) |
-| `Ctrl+D` | Save it as a draft |
-| `Ctrl+X` | Toggle posting to X |
-| `Ctrl+L` | Toggle posting to LinkedIn |
-| `Ctrl+O` | Add an image (a path; Ctrl+O on an empty line removes them) |
-| `Ctrl+N` | Start a new post (the current one stays as it was saved) |
-| `Esc` | Leave the editor (the other keys work then) |
+| <kbd>L</kbd> or <kbd>Tab</kbd> | Switch to the next tab |
+| <kbd>H</kbd> or <kbd>Shift+Tab</kbd> | Switch to the previous tab |
+| <kbd>r</kbd> or <kbd>Space</kbd> <kbd>r</kbd> | Reload the lists |
+| <kbd>?</kbd> or <kbd>Space</kbd> <kbd>?</kbd> | Show every key |
+| <kbd>q</kbd> or <kbd>Space</kbd> <kbd>q</kbd> | Quit (what you were writing stays, as a draft) |
+| <kbd>Space</kbd> <kbd>,</kbd> | *Settings…* |
+| <kbd>Space</kbd> <kbd>,</kbd> <kbd>l</kbd> | Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up) |
+| <kbd>Space</kbd> <kbd>Space</kbd> | Search every action and run one (the palette) |
+| <kbd>Space</kbd> <kbd>t</kbd> | *Tabs…* |
+| <kbd>Space</kbd> <kbd>t</kbd> <kbd>c</kbd> or <kbd>1</kbd> | Switch to Compose |
+| <kbd>Space</kbd> <kbd>t</kbd> <kbd>q</kbd> or <kbd>2</kbd> | Switch to Queue |
+| <kbd>Space</kbd> <kbd>t</kbd> <kbd>d</kbd> or <kbd>3</kbd> | Switch to Drafts |
+| <kbd>Space</kbd> <kbd>t</kbd> <kbd>p</kbd> or <kbd>4</kbd> | Switch to Posted |
+| <kbd>Space</kbd> <kbd>t</kbd> <kbd>s</kbd> or <kbd>5</kbd> or <kbd>Space</kbd> <kbd>,</kbd> <kbd>s</kbd> | Switch to Settings |
 
-**Compose, outside the editor**
+**Compose**
 
-| Key | Action |
+| Keys | What it does |
 |---|---|
-| `i / Enter` | Edit the post |
+| <kbd>i</kbd> or <kbd>a</kbd> or <kbd>Enter</kbd> | Edit the post (INSERT: type it) |
+| <kbd>Space</kbd> <kbd>a</kbd> | *Add…* |
+| <kbd>Space</kbd> <kbd>a</kbd> <kbd>i</kbd> or <kbd>Ctrl+o</kbd> | Add an image (a path; an empty one removes them) |
+| <kbd>Space</kbd> <kbd>a</kbd> <kbd>n</kbd> or <kbd>Ctrl+n</kbd> | Start a new post (the current one stays as it was saved) |
+| <kbd>Space</kbd> <kbd>n</kbd> | *Networks…* |
+| <kbd>Space</kbd> <kbd>n</kbd> <kbd>x</kbd> or <kbd>Ctrl+x</kbd> | Toggle posting to X |
+| <kbd>Space</kbd> <kbd>n</kbd> <kbd>l</kbd> or <kbd>Ctrl+l</kbd> | Toggle posting to LinkedIn |
+| <kbd>Space</kbd> <kbd>p</kbd> | *Post…* |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>p</kbd> or <kbd>Ctrl+s</kbd> | Post it now (LinkedIn goes out, X opens in your browser; asks first) |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>t</kbd> or <kbd>Ctrl+t</kbd> | Schedule it (tomorrow 9am, fri 6pm, in 2h...) |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>d</kbd> or <kbd>Ctrl+d</kbd> | Save it as a draft |
+| | *While typing* |
+| <kbd>Ctrl+s</kbd> | Post it now (asks first) |
+| <kbd>Ctrl+t</kbd> | Schedule it |
+| <kbd>Ctrl+d</kbd> | Save it as a draft |
+| <kbd>Ctrl+x</kbd> or <kbd>Ctrl+l</kbd> | Toggle posting to X / LinkedIn |
+| <kbd>Ctrl+o</kbd> | Add an image |
+| <kbd>Ctrl+n</kbd> | Start a new post |
+| <kbd>Tab</kbd> or <kbd>Shift+Tab</kbd> | Switch tabs (what you wrote stays) |
+| <kbd>Esc</kbd> | Leave the editor (NORMAL: the other keys work then) |
 
-**Everywhere (outside the editor)**
+**Queue, Drafts, Posted**
 
-| Key | Action |
+| Keys | What it does |
 |---|---|
-| `Tab / Shift+Tab` | Switch to the next / previous tab |
-| `1 – 5` | Switch to Compose, Queue, Drafts, Posted or Settings (not while writing) |
-| `L` | Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up) |
-| `?` | Show every key |
-| `q` | Quit |
+| <kbd>j</kbd> or <kbd>Down</kbd> | Move to the next post |
+| <kbd>k</kbd> or <kbd>Up</kbd> | Move to the previous post |
+| <kbd>g</kbd> <kbd>g</kbd> or <kbd>Home</kbd> | Jump to the first post |
+| <kbd>G</kbd> or <kbd>End</kbd> | Jump to the last post |
+| <kbd>Enter</kbd> or <kbd>e</kbd> or <kbd>Space</kbd> <kbd>e</kbd> <kbd>e</kbd> | Edit the post in Compose (Posted: open its link) |
+| <kbd>o</kbd> or <kbd>Space</kbd> <kbd>o</kbd> <kbd>b</kbd> | Open the post's link in the browser |
+| <kbd>y</kbd> or <kbd>Space</kbd> <kbd>y</kbd> <kbd>y</kbd> | Copy the post's link |
+| <kbd>d</kbd> <kbd>d</kbd> or <kbd>Space</kbd> <kbd>d</kbd> <kbd>d</kbd> | Delete the draft, or cancel a scheduled or waiting post (asks first) |
+| <kbd>a</kbd> | Approve an agent's post (asks first) |
+| <kbd>n</kbd> | Decline an agent's post |
+| <kbd>Space</kbd> <kbd>p</kbd> | *Post…* |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>p</kbd> | Post it now (asks first) |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>t</kbd> | Schedule it, or move it to another time |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>r</kbd> | Send a post LinkedIn refused again |
+| <kbd>Space</kbd> <kbd>p</kbd> <kbd>x</kbd> | Open it on X's page to press Post (and confirm it after) |
 
-**Queue, Drafts and Posted**
+**Approving an agent's post**
 
-| Key | Action |
+| Keys | What it does |
 |---|---|
-| `j / k` | Move to the next / previous post |
-| `Enter / e` | Edit the post in Compose |
-| `p` | Post it now (asks first) |
-| `t` | Schedule it, or move it to another time |
-| `o` | Open it on X's page to press Post (and confirm it after) |
-| `a` | Approve an agent's post |
-| `n` | Decline an agent's post |
-| `r` | Send a post LinkedIn refused again |
-| `c` | Cancel a scheduled or waiting post |
-| `d` | Delete the draft (asks first) |
-| `y` | Copy the post's link |
-| `v` | Open the post's link in the browser |
+| <kbd>y</kbd> or <kbd>Ctrl+s</kbd> | Approve it as asked (posts on every network it names) |
+| <kbd>1</kbd> | Approve it for LinkedIn only (when it asks for both) |
+| <kbd>2</kbd> | Approve it for X only (when it asks for both) |
+| <kbd>t</kbd> | Schedule it: approve it for another time |
+| <kbd>e</kbd> or <kbd>i</kbd> or <kbd>Enter</kbd> | Edit it first (Ctrl+s approves your version, Esc comes back) |
+| <kbd>Tab</kbd> or <kbd>Shift+Tab</kbd> | Switch to the next / previous capsule: the post, each network, each image |
+| <kbd>o</kbd> | Open the image full size |
+| <kbd>j</kbd> or <kbd>k</kbd> | Scroll the post when it's longer than its frame |
+| <kbd>n</kbd> | Decline it (nothing is posted, the agent is told) |
+| <kbd>q</kbd> or <kbd>Esc</kbd> | Leave it for later (it waits in Queue) |
 
-**Approving an agent's post** (`vaikhari approve`, and the popup an agent's post opens)
+**Settings**
 
-| Key | Action |
+| Keys | What it does |
 |---|---|
-| `y` | Approve it as asked (posts on every network it names) |
-| `1` | Approve it for LinkedIn only (when it asks for both) |
-| `2` | Approve it for X only (when it asks for both) |
-| `t` | Schedule it: approve it for another time |
-| `e` | Edit it first (Ctrl+S approves your version, Esc comes back) |
-| `Tab / Shift+Tab` | Switch to the next / previous capsule: the post, each network, each image |
-| `o` | Open the image full size |
-| `j / k` | Scroll the post when it's longer than its frame |
-| `n` | Decline it (nothing is posted, the agent is told) |
-| `q / Esc` | Leave it for later (it waits in Queue) |
+| <kbd>j</kbd> or <kbd>k</kbd> | Move to the next / previous field |
+| <kbd>Enter</kbd> | Edit the field (Enter finishes, Esc cancels it) |
+| <kbd>Ctrl+s</kbd> | Save the settings (signs in to LinkedIn if it needs that) |
+| <kbd>Ctrl+l</kbd> | Open LinkedIn's sign-in (saves your changes first) |
+| <kbd>Ctrl+o</kbd> | Open LinkedIn's page for creating your app |
+| <kbd>Ctrl+y</kbd> | Copy the redirect URL for your LinkedIn app |
+| <kbd>Esc</kbd> | Leave Settings for Compose |
 
 **While X waits for your click**
 
-| Key | Action |
+| Keys | What it does |
 |---|---|
-| `j / k` | Move to the next / previous field |
-| `Enter` | Edit the field (Enter finishes, Esc cancels it) |
-| `Ctrl+S` | Save the settings (signs in to LinkedIn if it needs that) |
-| `Ctrl+L` | Open LinkedIn's sign-in (saves your changes first) |
-| `Ctrl+O` | Open LinkedIn's page for creating your app |
-| `Ctrl+Y` | Copy the redirect URL for your LinkedIn app |
-| `Esc` | Leave Settings for Compose |
-| `Enter` | Confirm it's posted on X (paste its link first for a thread's next part) |
-| `Ctrl+O` | Open X's page again |
-| `Ctrl+Y` | Copy the image to your clipboard again |
-| `Ctrl+K` | Cancel X for this post (LinkedIn is unaffected) |
-| `Esc` | Leave it for later (it waits in Queue) |
+| | *While typing* |
+| <kbd>Enter</kbd> | Confirm it's posted on X (paste its link first for a thread's next part) |
+| <kbd>Ctrl+o</kbd> | Open X's page again |
+| <kbd>Ctrl+y</kbd> | Copy the image to your clipboard again |
+| <kbd>Ctrl+k</kbd> | Cancel X for this post (LinkedIn is unaffected) |
+| <kbd>Esc</kbd> | Leave it for later (it waits in Queue) |
+
+**vaikhari web**
+
+| Keys | What it does |
+|---|---|
+| | *While typing* |
+| <kbd>Ctrl+Enter</kbd> | Post it now, or schedule it when it has a time |
+| <kbd>Ctrl+s</kbd> | Save it as a draft |
+| <kbd>Esc</kbd> | Leave the open window |
+<!-- /keys -->
 
 ## From the shell
 
@@ -315,7 +366,7 @@ vaikhari approve [ID]                              # an agent's post (the oldest
 | `vaikhari keybindings` | The keys, for Vayu's keybinding search |
 | `vaikhari --version` | The version |
 
-Times (`--at`, `Ctrl+T`, `t`) read the way people write them: `in 2h`,
+Times (`--at`, `Ctrl+T`, `Space p t`) read the way people write them: `in 2h`,
 `tomorrow 9am`, `fri 6pm`, `next tue 10:00`, `tonight`, `3 nov 10:30`,
 `2026-11-03 18:00`. A day without a time means 9:00.
 

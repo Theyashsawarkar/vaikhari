@@ -94,7 +94,7 @@ func main() {
 	case "web":
 		err = webCmd(args)
 	case "keybindings": // scripts/keybindings, for Vayu's keybinding search
-		fmt.Print(tui.KeybindingsFile())
+		fmt.Print(tui.Keys.KeybindingsFile("Tmux", "go test ./internal/tui -update"))
 	case "help":
 		fmt.Print(usage)
 	default:

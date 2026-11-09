@@ -2,7 +2,38 @@
 
 Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go.
 
-## Unreleased
+## v0.5.0 -- 2026-11-09
+
+- Vim keys, the grammar every Vayu tool now shares (from the new shared
+  module vyakarana): Compose opens in INSERT, in the editor, with its Ctrl
+  keys as before; `Esc` goes to NORMAL. There `Space` is the leader, with a
+  which-key box after 300 ms: `Space p` posts, schedules, saves a draft,
+  sends again or opens X's page; `Space n` toggles X and LinkedIn;
+  `Space a` adds an image or a new post; `Space t` switches tabs;
+  `Space , l` signs in to LinkedIn. `H` / `L` switch tabs, `g g` / `G` and
+  counts move in the lists (`1`..`5` alone still switch tabs, so a count
+  starts with `6`..`9`: `6j`; once a count has started every digit is part
+  of it), `dd` deletes a draft or cancels a post.
+  `Space Space` searches every action; `?` scrolls and no longer closes on
+  a stray key.
+- Confirming takes `y` only: `Enter` no longer posts, deletes or cancels,
+  so a second `Enter` can't do it by accident.
+- Moved keys say where they went: in the lists `p` → `Space p p`, `t` →
+  `Space p t`, `c` → `dd`, `v` → `o`. `o` now opens the post's link (X's
+  page is `Space p x`), `r` reloads the lists (sending again is
+  `Space p r`), `L` is the next tab (LinkedIn's sign-in is `Space , l`).
+- The README's key tables and `scripts/keybindings` are generated from the
+  keymap; the search shows each key's view and mode (`vaikhari lists:normal`).
+- The drawing kit (`internal/ui`) now comes from vyakarana instead of a copy.
+- Fixed before release (review): coming back to Compose with `H` / `L`,
+  `1`–`5` or Settings' `Esc` put you in INSERT, so a burst of tab keys
+  typed letters into the post. Compose now comes back in the mode you left
+  it in. `?` on the approve screen lists the approve keys first, and the
+  last hints that named old keys (`c` cancels, `o` confirms on X) say
+  `dd` and `Space p x`.
+- Fixed before release (review): keys typed fast (or a held key) arrive
+  together and were all dropped in NORMAL (`dd`, `LL`, `gg` did nothing);
+  each one now counts.
 
 - Every corner is rounded: the website's callouts.
 

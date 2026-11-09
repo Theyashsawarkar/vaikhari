@@ -15,19 +15,22 @@ config.toml.
   schedule); `internal/store` SQLite; `internal/linkedin` sign-in and the
   API; `internal/fake` a fake LinkedIn for tests and `vaikhari demo`;
   `internal/tui` the screen; `internal/mcpserver` the agent tools;
-  `internal/ui` the drawing kit shared in look with narada, pattan and
-  nauka; `internal/when` the time parser (narada's).
+  `internal/when` the time parser (narada's). The drawing kit (`ui`), the
+  key engine (`keymap`) and the popups (help, palette, which-key) come from
+  github.com/Theyashsawarkar/vyakarana, shared with pattan, nauka and darshan.
 - **It must stay free**: X goes through its share page, never its paid API
   or anything that logs in as the user (ADR 2). LinkedIn through the user's
   own app (ADR 4).
 - **Agents never post on their own**: an agent's post is `approval` until
   the user approves it (ADR 3). Never add a path around that. Status
   changes go through `Store.Transition` with the expected old status.
-- Keys live in `internal/tui/keys.go`. After adding, changing or removing
-  one: `go test ./internal/tui -update` (rewrites `scripts/keybindings`,
-  which Vayu's keybinding search reads), and update the README's key
-  tables (a test checks them). Descriptions start with a verb the search
-  knows.
+- Keys follow the shared vim grammar (vyakarana's README): INSERT in the
+  editor, NORMAL elsewhere, a `Space` leader with reserved groups; a
+  confirm takes `y` only. They live as data in `internal/tui/keys.go`.
+  After adding, changing or removing one: `go test ./internal/tui -update`
+  (rewrites `scripts/keybindings`, which Vayu's keybinding search reads,
+  and the README's key tables between the `<!-- keys -->` markers).
+  Descriptions start with a verb the search knows.
 - The README documents every feature, key, option and command: a change to
   any of them updates it. Every change gets a CHANGELOG.md entry; releases
   are tags (`vX.Y.Z`) with `Version` in internal/app/app.go bumped to match.

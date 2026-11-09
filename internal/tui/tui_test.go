@@ -19,7 +19,7 @@ import (
 	"github.com/Theyashsawarkar/vaikhari/internal/fake"
 	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
-	"github.com/Theyashsawarkar/vaikhari/internal/ui"
+	"github.com/Theyashsawarkar/vyakarana/ui"
 )
 
 func newApp(t *testing.T) (*app.App, *fake.LinkedIn, *[]string) {
@@ -352,10 +352,14 @@ func TestHelpAndLists(t *testing.T) {
 	size(m)
 	key(m, "esc")
 	key(m, "?")
-	if !strings.Contains(screen(m), "WHILE WRITING") || !strings.Contains(screen(m), "QUEUE, DRAFTS, POSTED") {
+	if !strings.Contains(screen(m), "EVERYWHERE") || !strings.Contains(screen(m), "COMPOSE") {
 		t.Fatal(screen(m))
 	}
-	key(m, "x") // any key closes
+	key(m, "x") // a stray key doesn't close it
+	if !m.help {
+		t.Fatal("a stray key closed the help")
+	}
+	key(m, "q")
 	key(m, "3")
 	if !strings.Contains(screen(m), "Drafts · 1") || !strings.Contains(screen(m), "a draft") {
 		t.Fatal(screen(m))
@@ -530,9 +534,11 @@ func TestSettingsSetsUpLinkedIn(t *testing.T) {
 	t.Cleanup(func() { linkedin.Open = old })
 	m := New(a, Options{})
 	size(m)
-	// L with no app goes to where it's set up
+	// Space , l with no app goes to where it's set up
 	keyT(m, tea.KeyEsc)
-	key(m, "L")
+	key(m, " ")
+	key(m, ",")
+	key(m, "l")
 	if m.tab != tabSettings || !strings.Contains(screen(m), "not set up yet") {
 		t.Fatalf("tab %d:\n%s", m.tab, screen(m))
 	}
@@ -603,12 +609,14 @@ func TestSettingsSetsUpLinkedIn(t *testing.T) {
 	if a.Config.LinkedIn.ClientSecret != "s3cret-value" || a.Config.X.Name != "Yash" || m.liErr != nil {
 		t.Fatalf("%+v, %v", a.Config, m.liErr)
 	}
-	// signed in already: L asks, so a stray key opens no tab
+	// signed in already: Space , l asks, so a stray key opens no tab
 	m.goTab(tabQueue)
 	before := signIn
 	signIn = ""
-	if cmd := key(m, "L"); cmd != nil || !strings.Contains(screen(m), "Sign in to LinkedIn again?") {
-		t.Fatalf("L while signed in:\n%s", screen(m))
+	key(m, " ")
+	key(m, ",")
+	if cmd := key(m, "l"); cmd != nil || !strings.Contains(screen(m), "Sign in to LinkedIn again?") {
+		t.Fatalf("Space , l while signed in:\n%s", screen(m))
 	}
 	key(m, "n")
 	if signIn != "" {
@@ -720,5 +728,95 @@ func TestPictureIDsDontRepeat(t *testing.T) {
 		} else {
 			pp.next++
 		}
+	}
+}
+
+func TestVimKeysInTheLists(t *testing.T) {
+	a, _, _ := newApp(t)
+	a.SaveDraft(post.Post{Text: "a draft", Networks: []string{post.X}})
+	m := New(a, Options{})
+	size(m)
+	key(m, "esc")
+	key(m, "L")
+	key(m, "L")
+	if m.tab != tabDrafts {
+		t.Fatalf("L L: tab %d", m.tab)
+	}
+	key(m, "c")
+	if !strings.Contains(screen(m), "c moved to d d") {
+		t.Fatalf("c:\n%s", screen(m))
+	}
+	key(m, "d")
+	key(m, "d")
+	if !strings.Contains(screen(m), "Delete draft") {
+		t.Fatalf("dd:\n%s", screen(m))
+	}
+	key(m, "enter") // only y says yes
+	if ds, _ := a.Store.List(post.Draft); len(ds) != 1 {
+		t.Fatal("Enter deleted the draft")
+	}
+	key(m, "d")
+	key(m, "d")
+	run(m, key(m, "y"))
+	if ds, _ := a.Store.List(post.Draft); len(ds) != 0 {
+		t.Fatal("y didn't delete the draft", ds)
+	}
+	key(m, " ")
+	key(m, " ")
+	if m.palette == nil {
+		t.Fatal("Space Space didn't open the palette")
+	}
+}
+
+// Coming back to Compose with H/L, a digit or Settings' Esc lands in NORMAL
+// when you left it in NORMAL: a burst of tab keys never types into the post.
+func TestTabKeysDontLandYouTyping(t *testing.T) {
+	a, _, _ := newApp(t)
+	m := New(a, Options{})
+	size(m)
+	key(m, "esc")
+	for _, k := range []string{"L", "L", "L", "L", "L", "L"} { // round to Queue
+		key(m, k)
+	}
+	if m.tab != tabQueue || m.editing || m.ed.Value() != "" {
+		t.Fatalf("tab %d, editing %v, text %q", m.tab, m.editing, m.ed.Value())
+	}
+	key(m, "5")
+	key(m, "esc") // Settings' Esc goes to Compose
+	key(m, "x")
+	if m.tab != tabCompose || m.editing || m.ed.Value() != "" {
+		t.Fatalf("Esc from Settings: tab %d, editing %v, text %q", m.tab, m.editing, m.ed.Value())
+	}
+}
+
+// The help sheet of the approve screen starts with the approve keys.
+func TestApproveHelpShowsItsKeys(t *testing.T) {
+	a, _, _ := newApp(t)
+	m := approver(a, agentPost(t, a, "hello", post.LinkedIn))
+	if m.where() != inApprove {
+		t.Fatalf("where %q", m.where())
+	}
+}
+
+// Keys typed fast come as one message: each still counts, and the ones
+// after a switch to INSERT are typed.
+func TestFastKeysCountOneByOne(t *testing.T) {
+	a, _, _ := newApp(t)
+	a.SaveDraft(post.Post{Text: "a draft", Networks: []string{post.X}})
+	m := New(a, Options{})
+	size(m)
+	key(m, "esc")
+	m.key(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("LLdd")})
+	if m.tab != tabDrafts || !strings.Contains(screen(m), "Delete draft") {
+		t.Fatalf("tab %d:\n%s", m.tab, screen(m))
+	}
+	key(m, "n")
+	m.key(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("Hihi")})
+	if m.tab != tabQueue || m.editing {
+		t.Fatalf("Hihi: tab %d, editing %v", m.tab, m.editing)
+	}
+	m.key(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("1ihi")})
+	if !m.editing || m.ed.Value() != "hi" {
+		t.Fatalf("1ihi: editing %v, text %q", m.editing, m.ed.Value())
 	}
 }

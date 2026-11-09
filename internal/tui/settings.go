@@ -93,8 +93,13 @@ func (m *Model) changes() (any, app bool) {
 	return any, app
 }
 
-// goTab switches tabs: Compose opens in its editor, Settings on a fresh form.
+// goTab switches tabs: Compose comes back in the mode you left it in (in its
+// editor after Tab while writing, NORMAL after Esc, so H/L or 1-5 never land
+// you typing), Settings on a fresh form.
 func (m *Model) goTab(t int) {
+	if m.tab == tabCompose && !m.approving {
+		m.resume = m.editing
+	}
 	if m.editing {
 		m.ed.Blur()
 	}
@@ -107,8 +112,10 @@ func (m *Model) goTab(t int) {
 	m.tab = t
 	switch t {
 	case tabCompose:
-		m.editing = true
-		m.ed.Focus()
+		if m.resume {
+			m.editing = true
+			m.ed.Focus()
+		}
 	case tabSettings:
 		m.form = m.newSettings()
 	}

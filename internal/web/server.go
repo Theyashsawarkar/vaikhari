@@ -30,8 +30,8 @@ import (
 	"github.com/Theyashsawarkar/vaikhari/internal/app"
 	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
-	"github.com/Theyashsawarkar/vaikhari/internal/ui"
 	"github.com/Theyashsawarkar/vaikhari/internal/when"
+	"github.com/Theyashsawarkar/vyakarana/ui"
 )
 
 //go:embed static

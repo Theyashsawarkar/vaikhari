@@ -9,7 +9,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
-	"github.com/Theyashsawarkar/vaikhari/internal/ui"
+	"github.com/Theyashsawarkar/vyakarana/popup"
+	"github.com/Theyashsawarkar/vyakarana/ui"
+
 	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
@@ -41,15 +43,22 @@ func (m *Model) View() string {
 func (m *Model) overlays(out string) string {
 	switch {
 	case m.help:
-		out = m.overlay(out, m.helpBox())
+		out = m.overlay(out, m.sheet.Box(m.st, Keys, m.where(), m.w, m.h-2))
+	case m.palette != nil:
+		box := m.palette.Box(m.st, m.w, m.h-2)
+		out = ui.Overlay(out, box, m.w, max(1, (m.h-len(box))/3))
 	case m.xwait != nil:
 		out = m.overlay(out, m.xwaitBox())
 	case m.prompt != nil:
 		lines := []string{m.st.Sub.Render(m.prompt.hint), "", m.prompt.in.View(), "", m.st.Key("Enter", "ok") + "  " + m.st.Key("Esc", "cancel")}
 		out = m.overlay(out, m.st.Popup(m.prompt.title, lines, min(m.w-4, 66), ""))
 	case m.confirm != nil:
-		lines := append(append([]string{}, m.confirm.lines...), "", m.st.Key("y", "yes")+"  "+m.st.Key("n", "no"))
+		lines := append(append([]string{}, m.confirm.lines...), "", m.st.Key("y", "yes")+"  "+m.st.Key("any other key", "no"))
 		out = m.overlay(out, m.st.Popup(m.confirm.title, lines, min(m.w-4, 76), ""))
+	case m.which:
+		if box := popup.WhichKey(m.st, m.eng.Pending(), m.eng.Hints(m.where()), m.w); len(box) > 0 {
+			out = ui.Overlay(out, box, m.w, max(1, m.h-len(box)-1))
+		}
 	}
 	return out
 }
@@ -122,13 +131,13 @@ func (m *Model) footer() string {
 		mode, keys = "APPROVE", [][2]string{{"y", m.postLabel()}, {"e", "Edit first"}, {"n", "Decline"}, {"q", "Decide later"}}
 	case m.editing:
 		mode, keys = "WRITE", [][2]string{{"^S", "post"}, {"^T", "schedule"}, {"^D", "draft"}, {"^X", "X"}, {"^L", "LinkedIn"},
-			{"^O", "image"}, {"^N", "new"}, {"Tab", "next tab"}, {"Esc", "more keys"}}
+			{"^O", "image"}, {"^N", "new"}, {"Tab", "next tab"}, {"Esc", "NORMAL"}}
 	case m.tab == tabSettings && m.form != nil && m.form.editing:
 		mode, keys = "EDITING", [][2]string{{"Enter", "done"}, {"Esc", "cancel this field"}, {"^S", "save"}}
 	case m.tab == tabSettings:
 		mode, keys = "SETTINGS", [][2]string{{"j/k", "move"}, {"Enter", "edit"}, {"^S", "save"}, {"^L", "sign in"}, {"^O", "LinkedIn's page"}, {"^Y", "copy URL"}, {"Tab", "next tab"}, {"Esc", "Compose"}}
 	case m.tab == tabCompose:
-		mode, keys = "COMPOSE", [][2]string{{"i", "write"}, {"^S", "post"}, {"^T", "schedule"}, {"Tab", "queue"}, {"?", "keys"}, {"q", "quit"}}
+		mode, keys = "COMPOSE", [][2]string{{"i", "write"}, {"␣p", "post…"}, {"␣n", "networks…"}, {"␣a", "add…"}, {"H/L", "tabs"}, {"?", "keys"}, {"q", "quit"}}
 	case m.tab == tabQueue:
 		mode = "QUEUE"
 		p, _ := m.selected()
@@ -136,21 +145,24 @@ func (m *Model) footer() string {
 		case post.Approval:
 			keys = [][2]string{{"a", "approve"}, {"n", "decline"}, {"e", "edit"}}
 		case post.Scheduled:
-			keys = [][2]string{{"p", "post now"}, {"t", "move"}, {"e", "edit"}, {"c", "cancel"}}
+			keys = [][2]string{{"␣pp", "post now"}, {"␣pt", "move"}, {"e", "edit"}, {"dd", "cancel"}}
 		case post.Ready, post.Failed:
 			if p.State(post.LinkedIn) == post.Error {
-				keys = append(keys, [2]string{"r", "retry LinkedIn"})
+				keys = append(keys, [2]string{"␣pr", "retry LinkedIn"})
 			}
 			if p.On(post.X) && p.State(post.X) != post.Done && p.State(post.X) != post.Abandoned {
-				keys = append(keys, [2]string{"o", "open on X"})
+				keys = append(keys, [2]string{"␣px", "open on X"})
 			}
-			keys = append(keys, [2]string{"c", "cancel"})
+			keys = append(keys, [2]string{"dd", "cancel"})
 		}
-		keys = append(keys, [2]string{"Tab", "next tab"}, [2]string{"?", "keys"})
+		keys = append(keys, [2]string{"H/L", "tabs"}, [2]string{"?", "keys"})
 	case m.tab == tabDrafts:
-		mode, keys = "DRAFTS", [][2]string{{"e", "edit"}, {"p", "post now"}, {"t", "schedule"}, {"d", "delete"}, {"?", "keys"}}
+		mode, keys = "DRAFTS", [][2]string{{"e", "edit"}, {"␣pp", "post now"}, {"␣pt", "schedule"}, {"dd", "delete"}, {"?", "keys"}}
 	default:
-		mode, keys = "POSTED", [][2]string{{"v", "open"}, {"y", "copy link"}, {"o", "X again"}, {"?", "keys"}}
+		mode, keys = "POSTED", [][2]string{{"o", "open"}, {"y", "copy link"}, {"␣px", "X again"}, {"?", "keys"}}
+	}
+	if m.eng.Waiting() && msg == "" {
+		msg = m.st.Peach.Render(m.eng.Pending() + " …")
 	}
 	return m.st.Footer(mode, keys, msg, m.w)
 }
@@ -583,7 +595,7 @@ func (m *Model) detail(p post.Post, w, h int) []string {
 		case post.Done:
 			st = m.st.Green.Render("✓ posted ") + m.st.Sub.Render(r.URL)
 		case post.Opened:
-			st = m.st.Yellow.Render("◐ open in your browser: press Post there, then o to confirm")
+			st = m.st.Yellow.Render("◐ open in your browser: press Post there, then Space p x to confirm")
 		case post.Error:
 			st = m.st.Red.Render("✗ " + r.Error)
 		case post.Abandoned:
@@ -591,9 +603,9 @@ func (m *Model) detail(p post.Post, w, h int) []string {
 		default:
 			switch {
 			case n == post.X && p.Status == post.Ready && r.Part > 0:
-				st = m.st.Yellow.Render(fmt.Sprintf("◐ part %d of %d next: o opens it", r.Part+1, len(post.XParts(p.Text))))
+				st = m.st.Yellow.Render(fmt.Sprintf("◐ part %d of %d next: Space p x opens it", r.Part+1, len(post.XParts(p.Text))))
 			case n == post.X && p.Status == post.Ready:
-				st = m.st.Yellow.Render("◐ ready: o opens it on X")
+				st = m.st.Yellow.Render("◐ ready: Space p x opens it on X")
 			default:
 				st = m.st.Muted.Render("not yet")
 			}
@@ -680,53 +692,4 @@ func (m *Model) xwaitBox() []string {
 	lines = append(lines, x.in.View(), "")
 	lines = append(lines, flow(keys, min(m.w-4, 78)-6)...)
 	return m.st.Popup(title, lines, min(m.w-4, 78), m.st.T.Sky)
-}
-
-func (m *Model) helpLines() []string {
-	var out []string
-	where := ""
-	heads := map[string]string{"write": "While writing", "compose": "Compose", "": "Everywhere", "lists": "Queue, Drafts, Posted", "approve": "Approving an agent's post", "x": "While X waits for your click", "settings": "Settings"}
-	for _, k := range Keys {
-		if k.Where != where || len(out) == 0 {
-			where = k.Where
-			if len(out) > 0 {
-				out = append(out, "")
-			}
-			out = append(out, m.st.Heading(heads[where]))
-		}
-		out = append(out, m.st.Key(k.Keys, "")+" "+m.st.Sub.Render(k.Desc))
-	}
-	return out
-}
-
-// helpBox is the key sheet, in two columns when one doesn't fit.
-func (m *Model) helpBox() []string {
-	lines := m.helpLines()
-	foot := m.st.Muted.Render("Any key closes this.")
-	if len(lines)+4 <= m.h || m.w < 120 {
-		return m.st.Popup("Keys", append(lines, "", foot), min(m.w-4, 92), "")
-	}
-	// split at a section start near the middle
-	cut := len(lines) / 2
-	for i := cut; i < len(lines); i++ {
-		if lines[i] == "" {
-			cut = i
-			break
-		}
-	}
-	w := min(m.w-4, 170)
-	cw := (w - 7) / 2
-	left, right := lines[:cut], lines[min(cut+1, len(lines)):]
-	var out []string
-	for i := 0; i < max(len(left), len(right)); i++ {
-		l, r := "", ""
-		if i < len(left) {
-			l = left[i]
-		}
-		if i < len(right) {
-			r = right[i]
-		}
-		out = append(out, ui.Fit(l, cw)+"   "+r)
-	}
-	return m.st.Popup("Keys", append(out, "", foot), w, "")
 }

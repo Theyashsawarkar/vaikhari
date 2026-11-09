@@ -1,54 +1,79 @@
 # Keys inside the vaikhari screen, for Vayu's keybinding search
 # (keybind-search.py reads ~/.tmux/plugins/*/scripts). Generated from
-# internal/tui/keys.go by `go test ./internal/tui -update`; don't edit.
-# keybind: Tmux/vaikhari | Ctrl+S | Post it now (LinkedIn goes out, X opens in your browser; asks first) (while writing)
-# keybind: Tmux/vaikhari | Ctrl+T | Schedule it (tomorrow 9am, fri 6pm, in 2h...) (while writing)
-# keybind: Tmux/vaikhari | Ctrl+D | Save it as a draft (while writing)
-# keybind: Tmux/vaikhari | Ctrl+X | Toggle posting to X (while writing)
-# keybind: Tmux/vaikhari | Ctrl+L | Toggle posting to LinkedIn (while writing)
-# keybind: Tmux/vaikhari | Ctrl+O | Add an image (a path; Ctrl+O on an empty line removes them) (while writing)
-# keybind: Tmux/vaikhari | Ctrl+N | Start a new post (the current one stays as it was saved) (while writing)
-# keybind: Tmux/vaikhari | Esc | Leave the editor (the other keys work then) (while writing)
-# keybind: Tmux/vaikhari | i / Enter | Edit the post (Compose tab)
-# keybind: Tmux/vaikhari | Tab / Shift+Tab | Switch to the next / previous tab
-# keybind: Tmux/vaikhari | 1 – 5 | Switch to Compose, Queue, Drafts, Posted or Settings (not while writing)
-# keybind: Tmux/vaikhari | L | Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up)
-# keybind: Tmux/vaikhari | ? | Show every key
-# keybind: Tmux/vaikhari | q | Quit
-# keybind: Tmux/vaikhari | j / k | Move to the next / previous post (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | Enter / e | Edit the post in Compose (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | p | Post it now (asks first) (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | t | Schedule it, or move it to another time (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | o | Open it on X's page to press Post (and confirm it after) (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | a | Approve an agent's post (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | n | Decline an agent's post (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | r | Send a post LinkedIn refused again (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | c | Cancel a scheduled or waiting post (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | d | Delete the draft (asks first) (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | y | Copy the post's link (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | v | Open the post's link in the browser (Queue, Drafts, Posted)
-# keybind: Tmux/vaikhari | y | Approve it as asked (posts on every network it names) (approving an agent's post)
-# keybind: Tmux/vaikhari | 1 | Approve it for LinkedIn only (when it asks for both) (approving an agent's post)
-# keybind: Tmux/vaikhari | 2 | Approve it for X only (when it asks for both) (approving an agent's post)
-# keybind: Tmux/vaikhari | t | Schedule it: approve it for another time (approving an agent's post)
-# keybind: Tmux/vaikhari | e | Edit it first (Ctrl+S approves your version, Esc comes back) (approving an agent's post)
-# keybind: Tmux/vaikhari | Tab / Shift+Tab | Switch to the next / previous capsule: the post, each network, each image (approving an agent's post)
-# keybind: Tmux/vaikhari | o | Open the image full size (approving an agent's post)
-# keybind: Tmux/vaikhari | j / k | Scroll the post when it's longer than its frame (approving an agent's post)
-# keybind: Tmux/vaikhari | n | Decline it (nothing is posted, the agent is told) (approving an agent's post)
-# keybind: Tmux/vaikhari | q / Esc | Leave it for later (it waits in Queue) (approving an agent's post)
-# keybind: Tmux/vaikhari | j / k | Move to the next / previous field (Settings tab)
-# keybind: Tmux/vaikhari | Enter | Edit the field (Enter finishes, Esc cancels it) (Settings tab)
-# keybind: Tmux/vaikhari | Ctrl+S | Save the settings (signs in to LinkedIn if it needs that) (Settings tab)
-# keybind: Tmux/vaikhari | Ctrl+L | Open LinkedIn's sign-in (saves your changes first) (Settings tab)
-# keybind: Tmux/vaikhari | Ctrl+O | Open LinkedIn's page for creating your app (Settings tab)
-# keybind: Tmux/vaikhari | Ctrl+Y | Copy the redirect URL for your LinkedIn app (Settings tab)
-# keybind: Tmux/vaikhari | Esc | Leave Settings for Compose (Settings tab)
-# keybind: Tmux/vaikhari | Enter | Confirm it's posted on X (paste its link first for a thread's next part) (X popup)
-# keybind: Tmux/vaikhari | Ctrl+O | Open X's page again (X popup)
-# keybind: Tmux/vaikhari | Ctrl+Y | Copy the image to your clipboard again (X popup)
-# keybind: Tmux/vaikhari | Ctrl+K | Cancel X for this post (LinkedIn is unaffected) (X popup)
-# keybind: Tmux/vaikhari | Esc | Leave it for later (it waits in Queue) (X popup)
-# keybind: Tmux/vaikhari | Ctrl+Enter | Post it now, or schedule it when it has a time (vaikhari web)
-# keybind: Tmux/vaikhari | Ctrl+S | Save it as a draft (vaikhari web)
-# keybind: Tmux/vaikhari | Esc | Leave the open window (vaikhari web)
+# the keymap by `go test ./internal/tui -update`; don't edit.
+# keybind-group: Tmux/vaikhari | Space t | Tabs
+# keybind-group: Tmux/vaikhari | Space , | Settings
+# keybind-group: Tmux/vaikhari | Space p | Post
+# keybind-group: Tmux/vaikhari | Space n | Networks
+# keybind-group: Tmux/vaikhari | Space a | Add
+# keybind-group: Tmux/vaikhari | Space e | Edit
+# keybind-group: Tmux/vaikhari | Space o | Open
+# keybind-group: Tmux/vaikhari | Space y | Copy
+# keybind-group: Tmux/vaikhari | Space d | Delete
+# keybind: Tmux/vaikhari:normal | L / Tab | Switch to the next tab
+# keybind: Tmux/vaikhari:normal | H / Shift+Tab | Switch to the previous tab
+# keybind: Tmux/vaikhari:normal | Space t c / 1 | Switch to Compose
+# keybind: Tmux/vaikhari:normal | Space t q / 2 | Switch to Queue
+# keybind: Tmux/vaikhari:normal | Space t d / 3 | Switch to Drafts
+# keybind: Tmux/vaikhari:normal | Space t p / 4 | Switch to Posted
+# keybind: Tmux/vaikhari:normal | Space t s / 5 / Space , s | Switch to Settings
+# keybind: Tmux/vaikhari:normal | Space , l | Open LinkedIn's sign-in again (it lasts 60 days; Settings sets it up)
+# keybind: Tmux/vaikhari:normal | r / Space r | Reload the lists
+# keybind: Tmux/vaikhari:normal | ? / Space ? | Show every key
+# keybind: Tmux/vaikhari:normal | Space Space | Search every action and run one (the palette)
+# keybind: Tmux/vaikhari:normal | q / Space q | Quit (what you were writing stays, as a draft)
+# keybind: Tmux/vaikhari compose:normal | i / a / Enter | Edit the post (INSERT: type it)
+# keybind: Tmux/vaikhari compose:normal | Space p p / Ctrl+s | Post it now (LinkedIn goes out, X opens in your browser; asks first)
+# keybind: Tmux/vaikhari compose:normal | Space p t / Ctrl+t | Schedule it (tomorrow 9am, fri 6pm, in 2h...)
+# keybind: Tmux/vaikhari compose:normal | Space p d / Ctrl+d | Save it as a draft
+# keybind: Tmux/vaikhari compose:normal | Space n x / Ctrl+x | Toggle posting to X
+# keybind: Tmux/vaikhari compose:normal | Space n l / Ctrl+l | Toggle posting to LinkedIn
+# keybind: Tmux/vaikhari compose:normal | Space a i / Ctrl+o | Add an image (a path; an empty one removes them)
+# keybind: Tmux/vaikhari compose:normal | Space a n / Ctrl+n | Start a new post (the current one stays as it was saved)
+# keybind: Tmux/vaikhari compose:insert | Ctrl+s | Post it now (asks first)
+# keybind: Tmux/vaikhari compose:insert | Ctrl+t | Schedule it
+# keybind: Tmux/vaikhari compose:insert | Ctrl+d | Save it as a draft
+# keybind: Tmux/vaikhari compose:insert | Ctrl+x / Ctrl+l | Toggle posting to X / LinkedIn
+# keybind: Tmux/vaikhari compose:insert | Ctrl+o | Add an image
+# keybind: Tmux/vaikhari compose:insert | Ctrl+n | Start a new post
+# keybind: Tmux/vaikhari compose:insert | Tab / Shift+Tab | Switch tabs (what you wrote stays)
+# keybind: Tmux/vaikhari compose:insert | Esc | Leave the editor (NORMAL: the other keys work then)
+# keybind: Tmux/vaikhari lists:normal | j / Down | Move to the next post
+# keybind: Tmux/vaikhari lists:normal | k / Up | Move to the previous post
+# keybind: Tmux/vaikhari lists:normal | g g / Home | Jump to the first post
+# keybind: Tmux/vaikhari lists:normal | G / End | Jump to the last post
+# keybind: Tmux/vaikhari lists:normal | Enter / e / Space e e | Edit the post in Compose (Posted: open its link)
+# keybind: Tmux/vaikhari lists:normal | o / Space o b | Open the post's link in the browser
+# keybind: Tmux/vaikhari lists:normal | y / Space y y | Copy the post's link
+# keybind: Tmux/vaikhari lists:normal | d d / Space d d | Delete the draft, or cancel a scheduled or waiting post (asks first)
+# keybind: Tmux/vaikhari lists:normal | Space p p | Post it now (asks first)
+# keybind: Tmux/vaikhari lists:normal | Space p t | Schedule it, or move it to another time
+# keybind: Tmux/vaikhari lists:normal | Space p r | Send a post LinkedIn refused again
+# keybind: Tmux/vaikhari lists:normal | Space p x | Open it on X's page to press Post (and confirm it after)
+# keybind: Tmux/vaikhari lists:normal | a | Approve an agent's post (asks first)
+# keybind: Tmux/vaikhari lists:normal | n | Decline an agent's post
+# keybind: Tmux/vaikhari approve:normal | y / Ctrl+s | Approve it as asked (posts on every network it names)
+# keybind: Tmux/vaikhari approve:normal | 1 | Approve it for LinkedIn only (when it asks for both)
+# keybind: Tmux/vaikhari approve:normal | 2 | Approve it for X only (when it asks for both)
+# keybind: Tmux/vaikhari approve:normal | t | Schedule it: approve it for another time
+# keybind: Tmux/vaikhari approve:normal | e / i / Enter | Edit it first (Ctrl+s approves your version, Esc comes back)
+# keybind: Tmux/vaikhari approve:normal | Tab / Shift+Tab | Switch to the next / previous capsule: the post, each network, each image
+# keybind: Tmux/vaikhari approve:normal | o | Open the image full size
+# keybind: Tmux/vaikhari approve:normal | j / k | Scroll the post when it's longer than its frame
+# keybind: Tmux/vaikhari approve:normal | n | Decline it (nothing is posted, the agent is told)
+# keybind: Tmux/vaikhari approve:normal | q / Esc | Leave it for later (it waits in Queue)
+# keybind: Tmux/vaikhari settings:normal | j / k | Move to the next / previous field
+# keybind: Tmux/vaikhari settings:normal | Enter | Edit the field (Enter finishes, Esc cancels it)
+# keybind: Tmux/vaikhari settings:normal | Ctrl+s | Save the settings (signs in to LinkedIn if it needs that)
+# keybind: Tmux/vaikhari settings:normal | Ctrl+l | Open LinkedIn's sign-in (saves your changes first)
+# keybind: Tmux/vaikhari settings:normal | Ctrl+o | Open LinkedIn's page for creating your app
+# keybind: Tmux/vaikhari settings:normal | Ctrl+y | Copy the redirect URL for your LinkedIn app
+# keybind: Tmux/vaikhari settings:normal | Esc | Leave Settings for Compose
+# keybind: Tmux/vaikhari x:insert | Enter | Confirm it's posted on X (paste its link first for a thread's next part)
+# keybind: Tmux/vaikhari x:insert | Ctrl+o | Open X's page again
+# keybind: Tmux/vaikhari x:insert | Ctrl+y | Copy the image to your clipboard again
+# keybind: Tmux/vaikhari x:insert | Ctrl+k | Cancel X for this post (LinkedIn is unaffected)
+# keybind: Tmux/vaikhari x:insert | Esc | Leave it for later (it waits in Queue)
+# keybind: Tmux/vaikhari web:insert | Ctrl+Enter | Post it now, or schedule it when it has a time
+# keybind: Tmux/vaikhari web:insert | Ctrl+s | Save it as a draft
+# keybind: Tmux/vaikhari web:insert | Esc | Leave the open window

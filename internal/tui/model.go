@@ -19,10 +19,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/Theyashsawarkar/vyakarana/keymap"
+	vmode "github.com/Theyashsawarkar/vyakarana/mode"
+	"github.com/Theyashsawarkar/vyakarana/popup"
+	"github.com/Theyashsawarkar/vyakarana/ui"
+
 	"github.com/Theyashsawarkar/vaikhari/internal/app"
 	"github.com/Theyashsawarkar/vaikhari/internal/linkedin"
 	"github.com/Theyashsawarkar/vaikhari/internal/post"
-	"github.com/Theyashsawarkar/vaikhari/internal/ui"
 	"github.com/Theyashsawarkar/vaikhari/internal/when"
 )
 
@@ -71,6 +75,11 @@ type Model struct {
 	confirm *confirm
 	xwait   *xwait
 	help    bool
+	resume  bool           // Compose was left while writing: coming back writes again
+	sheet   popup.Help     // the help sheet's scroll
+	palette *popup.Palette // Space Space
+	eng     keymap.Engine
+	which   bool // the which-key box is showing
 	busy    string
 
 	msg    string
@@ -122,7 +131,8 @@ type authMsg struct{ err error }
 
 // New makes the screen.
 func New(a *app.App, opt Options) *Model {
-	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("vaikhari")), themeT: ui.ThemeStamp(), pics: newPictures()}
+	m := &Model{a: a, opt: opt, st: ui.New(ui.LoadTheme("vaikhari")), themeT: ui.ThemeStamp(), pics: newPictures(),
+		eng: keymap.NewEngine(Keys, vmode.Normal)}
 	if opt.Graphics {
 		m.pics.detectGraphics()
 	}
@@ -242,6 +252,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, func() tea.Msg { m.a.DeliverDue(context.Background()); return nil })
 		}
 		return m, tea.Batch(append(cmds, tick())...)
+	case popup.WhichMsg:
+		m.which = msg.Gen == m.eng.Gen() && m.eng.Waiting()
+		return m, nil
 	case publishedMsg:
 		return m, m.published(msg)
 	case authMsg:
@@ -284,14 +297,35 @@ func (m *Model) bodyHeight() int { return max(6, m.h-2) }
 func (m *Model) editorHeight() int { return m.bodyHeight() - 5 }
 
 func (m *Model) key(k tea.KeyMsg) tea.Cmd {
+	// Keys typed fast arrive as one message ("dd", "LLL"): take them one by
+	// one, so a burst of NORMAL keys isn't lost and each mode switch counts.
+	if k.Type == tea.KeyRunes && len(k.Runes) > 1 && !k.Paste {
+		var cmds []tea.Cmd
+		for _, r := range k.Runes {
+			cmds = append(cmds, m.key(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}, Alt: k.Alt}))
+		}
+		return tea.Batch(cmds...)
+	}
 	s := k.String()
+	m.which = false
 	if s == "ctrl+c" {
 		m.keep()
 		return tea.Quit
 	}
 	switch {
 	case m.help:
-		m.help = false
+		if m.sheet.Key(s) {
+			m.help = false
+		}
+		return nil
+	case m.palette != nil:
+		act, closed := m.palette.Key(s)
+		if closed {
+			m.palette = nil
+		}
+		if act != "" {
+			return m.run(act, 1, false)
+		}
 		return nil
 	case m.xwait != nil:
 		return m.xwaitKey(k)
@@ -300,7 +334,7 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 	case m.confirm != nil:
 		c := m.confirm
 		m.confirm = nil
-		if s == "y" || s == "enter" {
+		if s == "y" { // only y: a second Enter never posts or deletes
 			return c.yes(m)
 		}
 		m.flash("Nothing done.", false)
@@ -314,7 +348,7 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 	if m.editing {
 		return m.editKey(k)
 	}
-	if m.tab == tabSettings && !m.approving {
+	if m.tab == tabSettings && !m.approving && !m.eng.Waiting() {
 		if cmd, done := m.settingsKey(k); done {
 			return cmd
 		}
@@ -325,41 +359,99 @@ func (m *Model) key(k tea.KeyMsg) tea.Cmd {
 		}
 		return m.approveKey(s)
 	}
-	switch s {
-	case "q":
+	if !m.eng.Waiting() && popup.IsPopupKey(s, m.opt.PopupKey) {
 		m.keep()
 		return tea.Quit
-	case m.opt.PopupKey:
-		if s != "" {
-			m.keep()
-			return tea.Quit
-		}
-	case "?":
-		m.help = true
+	}
+	r := m.eng.Feed(s, m.where())
+	if r.Pending {
+		return popup.WhichAfter(r.Gen)
+	}
+	if msg := r.Message(); msg != "" {
+		m.flash(msg, false)
 		return nil
-	case "tab":
+	}
+	if r.Act == "" {
+		return nil
+	}
+	return m.run(r.Act, r.Count, r.Counted)
+}
+
+// where is the view the keys work in.
+func (m *Model) where() string {
+	if m.approving {
+		return inApprove
+	}
+	switch m.tab {
+	case tabCompose:
+		return inCompose
+	case tabSettings:
+		return inSettings
+	}
+	return inLists
+}
+
+// run does an action, from a key or the palette.
+func (m *Model) run(act string, n int, counted bool) tea.Cmd {
+	switch act {
+	case keymap.ActQuit:
+		m.keep()
+		return tea.Quit
+	case keymap.ActHelp:
+		m.help, m.sheet = true, popup.Help{}
+		return nil
+	case keymap.ActPalette:
+		p := popup.NewPalette(Keys, m.where())
+		m.palette = &p
+		return nil
+	case keymap.ActNextTab:
 		m.goTab((m.tab + 1) % len(tabNames))
 		return nil
-	case "shift+tab":
+	case keymap.ActPrevTab:
 		m.goTab((m.tab + len(tabNames) - 1) % len(tabNames))
 		return nil
-	case "1", "2", "3", "4", "5":
-		m.goTab(int(s[0] - '1'))
+	case "tab-1", "tab-2", "tab-3", "tab-4", "tab-5":
+		m.goTab(int(act[4] - '1'))
 		return nil
-	case "L":
+	case "sign-in":
 		return m.askSignIn()
-	}
-	if m.tab == tabCompose {
-		switch s {
-		case "i", "enter", "a":
-			m.editing = true
-			return m.ed.Focus()
-		case "esc":
-			return nil
+	case keymap.ActRefresh:
+		m.reload()
+		m.flash("Reloaded.", false)
+		return nil
+	case "write":
+		m.editing = true
+		return m.ed.Focus()
+	case "post":
+		if m.tab == tabCompose {
+			cmd, _ := m.composeCtrl("ctrl+s")
+			return cmd
 		}
-		return m.composeKey(s)
+	case "schedule":
+		if m.tab == tabCompose {
+			cmd, _ := m.composeCtrl("ctrl+t")
+			return cmd
+		}
+	case "draft":
+		cmd, _ := m.composeCtrl("ctrl+d")
+		return cmd
+	case "toggle-x":
+		cmd, _ := m.composeCtrl("ctrl+x")
+		return cmd
+	case "toggle-linkedin":
+		cmd, _ := m.composeCtrl("ctrl+l")
+		return cmd
+	case "image":
+		cmd, _ := m.composeCtrl("ctrl+o")
+		return cmd
+	case "new":
+		cmd, _ := m.composeCtrl("ctrl+n")
+		return cmd
 	}
-	return m.listKey(s)
+	if m.tab == tabCompose || m.tab == tabSettings {
+		return nil
+	}
+	return m.listAct(act, n, counted)
 }
 
 // keep saves what's in the editor as a draft when it changed: closing
@@ -405,12 +497,6 @@ func (m *Model) editKey(k tea.KeyMsg) tea.Cmd {
 	}
 	var cmd tea.Cmd
 	m.ed, cmd = m.ed.Update(k)
-	return cmd
-}
-
-// composeKey: Compose's keys outside the editor are its Ctrl keys too.
-func (m *Model) composeKey(s string) tea.Cmd {
-	cmd, _ := m.composeCtrl(s)
 	return cmd
 }
 
@@ -573,7 +659,7 @@ func (m *Model) published(r publishedMsg) tea.Cmd {
 	case p.Status == post.Scheduled:
 		m.flash(fmt.Sprintf("Scheduled #%d for %s.", p.ID, when.Say(time.UnixMilli(p.SendAt), m.a.Now())), false)
 	case r.err != nil:
-		m.flash(r.err.Error()+" (r in Queue retries)", true)
+		m.flash(r.err.Error()+" (Space p r in Queue retries)", true)
 	default:
 		m.flash(m.summary(p), false)
 	}
@@ -620,8 +706,8 @@ func (m *Model) xwaitKey(k tea.KeyMsg) tea.Cmd {
 	switch k.String() {
 	case "esc":
 		m.xwait = nil
-		m.flash(fmt.Sprintf("#%d stays in Queue: o opens X again.", w.id), false)
-		return m.quitIfApproving(answered{title: "✓ Approved", sub: "X still waits for your click.", tiny: "o in vaikhari's Queue opens it again"})
+		m.flash(fmt.Sprintf("#%d stays in Queue: Space p x opens X again.", w.id), false)
+		return m.quitIfApproving(answered{title: "✓ Approved", sub: "X still waits for your click.", tiny: "Space p x in vaikhari's Queue opens it again"})
 	case "ctrl+k":
 		m.xwait = nil
 		if _, err := m.a.SkipX(w.id); err != nil {
@@ -708,40 +794,44 @@ func (m *Model) promptKey(k tea.KeyMsg) tea.Cmd {
 	return cmd
 }
 
-func (m *Model) listKey(s string) tea.Cmd {
+func (m *Model) listAct(act string, n int, counted bool) tea.Cmd {
 	l := m.lists[m.tab]
-	switch s {
-	case "j", "down":
-		m.sel[m.tab] = min(m.sel[m.tab]+1, max(0, len(l)-1))
+	switch act {
+	case keymap.ActDown:
+		m.sel[m.tab] = min(m.sel[m.tab]+n, max(0, len(l)-1))
 		return nil
-	case "k", "up":
-		m.sel[m.tab] = max(m.sel[m.tab]-1, 0)
+	case keymap.ActUp:
+		m.sel[m.tab] = max(m.sel[m.tab]-n, 0)
 		return nil
-	case "g", "home":
-		m.sel[m.tab] = 0
-		return nil
-	case "G", "end":
-		m.sel[m.tab] = max(0, len(l)-1)
+	case keymap.ActTop, keymap.ActBottom:
+		switch {
+		case counted:
+			m.sel[m.tab] = max(0, min(n-1, len(l)-1))
+		case act == keymap.ActTop:
+			m.sel[m.tab] = 0
+		default:
+			m.sel[m.tab] = max(0, len(l)-1)
+		}
 		return nil
 	}
 	p, ok := m.selected()
 	if !ok {
 		return nil
 	}
-	switch s {
-	case "enter", "e":
+	switch act {
+	case "edit":
 		if m.tab == tabPosted {
 			return m.openLink(p)
 		}
 		if p.Status == post.Ready {
-			m.flash("Part of it is already out: o opens X, c cancels the rest.", true)
+			m.flash("Part of it is already out: Space p x opens X, dd cancels the rest.", true)
 			return nil
 		}
 		m.keep() // what you were writing stays, as a draft
 		m.load(p)
 		m.editing = true
 		return m.ed.Focus()
-	case "p":
+	case "post":
 		if p.Status == post.Ready || p.Status == post.Approval {
 			return nil
 		}
@@ -749,7 +839,7 @@ func (m *Model) listKey(s string) tea.Cmd {
 		m.confirm = &confirm{title: fmt.Sprintf("Post #%d now?", p.ID), lines: m.whatHappens(p), yes: func(m *Model) tea.Cmd {
 			return m.submit(p, "post")
 		}}
-	case "t":
+	case "schedule":
 		m.ask(fmt.Sprintf("When should #%d go out?", p.ID), "tomorrow 9am · fri 6pm · in 2h · 3 nov 10:30", "", func(m *Model, v string) tea.Cmd {
 			at, err := when.Parse(v, m.a.Now())
 			if err == nil {
@@ -763,7 +853,7 @@ func (m *Model) listKey(s string) tea.Cmd {
 			m.reload()
 			return nil
 		})
-	case "o":
+	case "open-x":
 		if !p.On(post.X) {
 			m.flash("This post isn't for X.", true)
 			return nil
@@ -775,39 +865,38 @@ func (m *Model) listKey(s string) tea.Cmd {
 		}
 		m.reload()
 		m.waitX(got)
-	case "a":
+	case "approve":
 		if p.Status != post.Approval {
 			return nil
 		}
 		m.confirm = &confirm{title: fmt.Sprintf("Approve #%d?", p.ID), lines: append([]string{m.st.Sub.Render(app.OneLine(p.Text, 70))}, m.whatHappens(p)...),
 			yes: func(m *Model) tea.Cmd { return m.approveID(p.ID, nil) }}
-	case "n":
+	case "decline":
 		if err := m.a.Decline(p.ID); err != nil {
 			m.flash(err.Error(), true)
 		} else {
 			m.flash(fmt.Sprintf("Declined #%d.", p.ID), false)
 		}
 		m.reload()
-	case "r":
+	case "retry":
 		m.busy = "Posting to LinkedIn…"
 		a := m.a
 		return func() tea.Msg {
 			got, err := a.Retry(context.Background(), p.ID)
 			return publishedMsg{p: got, err: err, action: "retry"}
 		}
-	case "c":
-		m.confirm = &confirm{title: fmt.Sprintf("Cancel #%d?", p.ID), lines: []string{m.st.Sub.Render("What's already posted stays posted.")},
-			yes: func(m *Model) tea.Cmd {
-				if err := m.a.Cancel(p.ID); err != nil {
-					m.flash(err.Error(), true)
-				} else {
-					m.flash(fmt.Sprintf("Cancelled #%d.", p.ID), false)
-				}
-				m.reload()
-				return nil
-			}}
-	case "d":
+	case "delete":
 		if p.Status != post.Draft {
+			m.confirm = &confirm{title: fmt.Sprintf("Cancel #%d?", p.ID), lines: []string{m.st.Sub.Render("What's already posted stays posted.")},
+				yes: func(m *Model) tea.Cmd {
+					if err := m.a.Cancel(p.ID); err != nil {
+						m.flash(err.Error(), true)
+					} else {
+						m.flash(fmt.Sprintf("Cancelled #%d.", p.ID), false)
+					}
+					m.reload()
+					return nil
+				}}
 			return nil
 		}
 		m.confirm = &confirm{title: fmt.Sprintf("Delete draft #%d?", p.ID), lines: []string{m.st.Sub.Render(app.OneLine(p.Text, 70))},
@@ -817,7 +906,7 @@ func (m *Model) listKey(s string) tea.Cmd {
 				m.reload()
 				return nil
 			}}
-	case "y":
+	case "copy-link":
 		link := link(p)
 		if link == "" {
 			m.flash("No link yet.", true)
@@ -828,7 +917,7 @@ func (m *Model) listKey(s string) tea.Cmd {
 		} else {
 			m.flash("Copied "+link, false)
 		}
-	case "v":
+	case "open-link":
 		return m.openLink(p)
 	}
 	return nil
