@@ -4,6 +4,7 @@ Newest first. Releases are tags (`vX.Y.Z`) with `Version` in internal/app/app.go
 
 ## Unreleased
 
+- **Spatial look**: rounder cards and controls; without varna, Vayu's Spatial colours.
 - The website has Vayu's Spatial look: graphite glass, a floating navigation bar, near-white for links and the main button, and the tool's own colour only as its signature (the logo's glow, the shloka's line, the release dots). No more all-caps labels.
 
 ## v0.5.0 -- 2026-11-09
