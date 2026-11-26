@@ -130,8 +130,8 @@ button.small { padding: 5px 12px; font-size: 12.5px; border-radius: 14px; }
 
 /* ---------------------------------------------------------------- previews */
 .previews { display: flex; flex-direction: column; gap: 10px; }
-.pv-head { display: flex; align-items: center; gap: 8px; color: var(--sub); font-size: 12.5px; font-weight: 600; letter-spacing: .3px;
-  text-transform: uppercase; margin-top: 6px; }
+.pv-head { display: flex; align-items: center; gap: 8px; color: var(--sub); font-size: 12.5px; font-weight: 600;
+  margin-top: 6px; }
 .pv-head span { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; }
 .pv-head .logo.li { color: #0a66c2; }
 .pv { border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; }
